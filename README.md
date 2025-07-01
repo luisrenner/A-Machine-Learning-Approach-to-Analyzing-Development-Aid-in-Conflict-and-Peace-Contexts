@@ -1,26 +1,48 @@
 # A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts
 
-## Project Overview
+🌍 SDG-Aligned Classification of Peacebuilding Aid Projects
 
-This project implements a **reproducible machine learning pipeline** to semantically classify peace-related development aid projects using **zero-shot text classification**. The main objective is to map CRS purpose code 15220: “Civilian peace-building, conflict prevention and resolution” to specific **SDG targets** (e.g., 16.1, 16.2, 5.2) using BART-large-MNLI and to analyze how aligned these projects are with conflict indicators across countries.
+⸻
 
----
+🧭 Ziel des Projekts
 
-## Folder Structure
-project/
-├── data/                # Raw and processed data (OECD, ACLED, annotations)
-│   ├── original/        # Original source files (e.g., downloaded CSVs)
-│   ├── processed/       # Cleaned and matched datasets
-│   └── validation/      # Labeled samples for evaluation
-│
-├── scripts/             # Python scripts for classification, evaluation, and analysis
-│   ├── classify_bart_zero_shot.py
-│   ├── evaluate_against_manual.py
-│   ├── correlation_analysis.py
-│   └── utils.py
-│
-├── results/             # Model outputs, evaluation tables, intermediate exports
-├── figures/             # Final plots for thesis (maps, scatterplots, etc.)
-├── analysis.ipynb       # Jupyter Notebook to run full analysis from start to finish
-├── requirements.txt     # Python dependencies
-└── README.md            # This documentation file
+Dieses Projekt zielt darauf ab, einen skalierbaren Zero-Shot-Ansatz zur inhaltlichen Kategorisierung von Entwicklungshilfeprojekten im Bereich Friedensförderung und Konfliktprävention zu entwickeln.
+Mithilfe eines Large Language Models (BART-large-MNLI) werden Textbeschreibungen aus dem OECD-CRS-Datensatz automatisch sieben konkreten SDG-Teilzielen (u. a. SDG 16.1, 16.2, 16.6, 5.2) zugeordnet. Dadurch wird eine präzisere, themenspezifische Analyse von Förderprioritäten ermöglicht.
+
+⸻
+
+🛠️ Code-Ausführung
+
+1. Umgebung vorbereiten
+
+Installiere alle notwendigen Python-Pakete:
+pip install -r requirements.txt
+
+
+Öffne und führe das Notebook analysis.ipynb aus. Es enthält alle Schritte:
+	•	📥 Datenimport & Vorverarbeitung
+	•	🧠 Zero-Shot-Klassifikation
+	•	📈 Korrelation mit Konfliktdaten (ACLED)
+	•	📊 Visualisierung & Export der Ergebnisse
+
+Alternativ können einzelne Schritte über Skripte im Ordner scripts/ ausgeführt werden.
+
+⸻
+
+📂 Verwendete Daten
+	•	OECD-CRS (Creditor Reporting System) für Disbursement-Daten von Friedensprojekten (2023)
+	•	ACLED Conflict Index für konfliktbezogene Länderscores (2024)
+	•	Manuell annotierte Labels für 300 Textbeschreibungen zur Evaluierung
+
+Die Daten sind im Ordner data/ organisiert:
+data/
+├── original/     # Originalquellen (OECD, ACLED, etc.)
+├── processed/    # Vorverarbeitete Dateien für Analyse
+└── validation/   # Goldstandard-Labels für die Evaluierung
+
+📊 Wichtigste Outputs
+	•	📄 SDG-Labels pro Projekt (Zero-Shot klassifiziert)
+	•	🗺️ Geografische Verteilung pro SDG-Ziel (figures/Map_*.pdf)
+	•	📉 Scatterplots zu Aid–Conflict-Zusammenhängen (figures/Scatter_*.pdf)
+	•	📋 Evaluierungstabellen (Precision, Recall, F1-Scores)
+	•	🤖 Vergleich mit GPT-4 Labels (Benchmarking gegen manuelle Annotation)
