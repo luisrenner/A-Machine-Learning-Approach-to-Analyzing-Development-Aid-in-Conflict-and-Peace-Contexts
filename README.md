@@ -34,12 +34,6 @@ Alternativ können einzelne Schritte über Skripte im Ordner scripts/ ausgeführ
 	•	ACLED Conflict Index für konfliktbezogene Länderscores (2024)
 	•	Manuell annotierte Labels für 300 Textbeschreibungen zur Evaluierung
 
-Die Daten sind im Ordner data/ organisiert:
-data/
-├── original/     # Originalquellen (OECD, ACLED, etc.)
-├── processed/    # Vorverarbeitete Dateien für Analyse
-└── validation/   # Goldstandard-Labels für die Evaluierung
-
 📊 Wichtigste Outputs
 	•	📄 SDG-Labels pro Projekt (Zero-Shot klassifiziert)
 	•	🗺️ Geografische Verteilung pro SDG-Ziel (figures/Map_*.pdf)
