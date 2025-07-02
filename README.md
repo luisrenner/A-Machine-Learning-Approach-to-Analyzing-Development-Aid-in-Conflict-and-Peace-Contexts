@@ -1,42 +1,68 @@
 # A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts
 
-🌍 SDG-Aligned Classification of Peacebuilding Aid Projects
+## 🌍 SDG-Aligned Classification of Peacebuilding Aid Projects
 
-⸻
+## 🧭 Project Objective
 
-🧭 Ziel des Projekts
+Global development efforts increasingly emphasize alignment with policy goals. However,
+existing aid reporting systems, most notably the Organisation for Economic Co-operation
+and Development (OECD) Creditor Reporting System (CRS), offer only limited insight
+into the actual content of funded projects. This is particularly problematic in the domain
+of peacebuilding, where overly broad purpose codes subsume a wide range of divergent
+initiatives without sufficient differentiation. Furthermore, despite the presence of global
+policy frameworks like the Sustainable Development Goals (SDGs), CRS data remains poorly
+aligned with their target-level categories. The current SDG labelling practice is applied
+inconsistently and lacks semantic precision, creating a fundamental gap in the evaluation
+of aid alignment. This thesis aims to close this gap by developing a scalable classification
+framework that semantically maps aid project descriptions to specific SDG sub-targets. The
+method leverages a zero-shot classification approach using the BART-large-MNLI model,
+which evaluates semantic entailment between policy prompts and project texts. A total of
+over 68,000 projects were classified to SDG targets 16.1–16.4, 16.6, 16.8 and 5.2. The results
+demonstrate that the proposed framework enables substantially greater thematic resolution
+compared to the existing CRS purpose codes and SDG labels. The framework enables more
+accurate mappings between disbursement flows and normative goals, and can be part of
+more robust monitoring and evaluation systems in international cooperation.
 
-Dieses Projekt zielt darauf ab, einen skalierbaren Zero-Shot-Ansatz zur inhaltlichen Kategorisierung von Entwicklungshilfeprojekten im Bereich Friedensförderung und Konfliktprävention zu entwickeln.
-Mithilfe eines Large Language Models (BART-large-MNLI) werden Textbeschreibungen aus dem OECD-CRS-Datensatz automatisch sieben konkreten SDG-Teilzielen (u. a. SDG 16.1, 16.2, 16.6, 5.2) zugeordnet. Dadurch wird eine präzisere, themenspezifische Analyse von Förderprioritäten ermöglicht.
+## 🛠️ How to Run the Code
 
-⸻
+### 1. Set up the environment
 
-🛠️ Code-Ausführung
+Install the required Python packages:
 
-1. Umgebung vorbereiten
-
-Installiere alle notwendigen Python-Pakete:
+```bash
 pip install -r requirements.txt
+```
 
+### 2. Run the main analysis
 
-Öffne und führe das Notebook analysis.ipynb aus. Es enthält alle Schritte:
-	•	📥 Datenimport & Vorverarbeitung
-	•	🧠 Zero-Shot-Klassifikation
-	•	📈 Korrelation mit Konfliktdaten (ACLED)
-	•	📊 Visualisierung & Export der Ergebnisse
+Open and run the notebook `analysis.ipynb`, which includes all steps:
 
-Alternativ können einzelne Schritte über Skripte im Ordner scripts/ ausgeführt werden.
+- Data import & preprocessing  
+- Zero-shot classification  
+- Correlation with conflict data (ACLED)  
+- Visualization & export of results  
 
-⸻
+Alternatively, individual steps can be executed using scripts located in the `scripts/` folder.
 
-📂 Verwendete Daten
-	•	OECD-CRS (Creditor Reporting System) für Disbursement-Daten von Friedensprojekten (2023)
-	•	ACLED Conflict Index für konfliktbezogene Länderscores (2024)
-	•	Manuell annotierte Labels für 300 Textbeschreibungen zur Evaluierung
+## 📂 Data Used
 
-📊 Wichtigste Outputs
-	•	📄 SDG-Labels pro Projekt (Zero-Shot klassifiziert)
-	•	🗺️ Geografische Verteilung pro SDG-Ziel (figures/Map_*.pdf)
-	•	📉 Scatterplots zu Aid–Conflict-Zusammenhängen (figures/Scatter_*.pdf)
-	•	📋 Evaluierungstabellen (Precision, Recall, F1-Scores)
-	•	🤖 Vergleich mit GPT-4 Labels (Benchmarking gegen manuelle Annotation)
+- OECD-CRS (Creditor Reporting System) for disbursement data on peace-related projects (2023)
+- ACLED Conflict Index for conflict scores at the country level (2024)
+- Manually annotated labels for 300 project descriptions used for validation
+
+All data is organized within the `data/` directory:
+
+- `data/original/`: Raw data sources
+- `data/processed/`: Preprocessed files
+- `data/validation/`: Gold-standard labels for model evaluation
+
+## 📊 Key Outputs
+
+The most important outputs of this project are:
+
+- SDG labels per project (automatically classified)
+- Visualizations:
+  - Geographic distributions per SDG target (`figures/Map_*.pdf`)
+  - Scatterplots on aid–conflict relationships (`figures/Scatter_*.pdf`)
+- Evaluation tables with precision, recall, and F1-scores
+- Comparison with GPT-4 classifications (benchmarking against manual annotations)
