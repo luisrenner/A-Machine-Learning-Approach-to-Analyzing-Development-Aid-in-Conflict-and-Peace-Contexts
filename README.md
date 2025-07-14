@@ -20,3 +20,13 @@ Download the required data folder from https://stats.oecd.org/Index.aspx?DataSet
 
 ### 4. Run code
 
+The data and plots folders will be automatically created at runtime as needed by the scripts.
+
+Run the scripts in the following order: preprocessing → classification → visualization. 
+
+#### Preprocessing
+
+01_preprocessing.py
+02_bart_large_mnli_classification.py
+05_keyword_classification.py
+06_add_classification_to_aid_data.py
