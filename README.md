@@ -12,3 +12,11 @@ git clone https://github.com/luisrenner/A-Machine-Learning-Approach-to-Analyzing
 
 ### 2. Install requirements
 
+pip install -r requirements.txt
+
+### 3. Download data
+
+Download the required data folder from https://stats.oecd.org/Index.aspx?DataSetCode=CRS1 and place it at root level, as specified in the folder structure below.
+
+### 4. Run code
+
