@@ -1,0 +1,4 @@
+{
+  "data_dir": "data",
+  "model": "facebook/bart-large-mnli"
+}
