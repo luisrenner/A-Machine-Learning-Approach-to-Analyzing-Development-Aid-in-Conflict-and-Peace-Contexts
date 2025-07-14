@@ -1,0 +1,17 @@
+pandas
+re
+string
+deep_translator
+google.colab
+tqdm
+transformers
+datasets
+tqdm.aut
+torch
+numpy
+geopandas
+matplotlib
+unidecode
+seaborn
+scipy
+statsmodels.api
