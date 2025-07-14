@@ -4,26 +4,43 @@
 
 Peacebuilding is a central objective of global development, particularly under Sustainable Development Goal (SDG) 16. A key instrument for promoting peace is development aid, yet the extent to which aid flows align with SDG 16 targets remains unclear. While existing aid data provides project-level information, the link between aid activities and SDG 16 has not been comprehensively analyzed. Here, we develop a novel, scalable machine learning framework to map aid projects onto SDG 16 targets. Specifically, we use zero-shot semantic entailment (BART-large-MNLI) to classify aid projects against SDG 16 targets (e.g., \enquote{Significantly reduce all forms of violence and related death rates everywhere} (SDG 16.1)). We apply our framework to over 68,000 aid projects, with USD 36.7 billion in disbursements, to assess how donors support peacebuilding objectives. Our analysis reveals that donor funding is heavily concentrated on a narrow subset of SDG 16 targets and countries such as Afghanistan, while key areas such as \enquote{End abuse, exploitation, trafficking and all forms of violence against and torture of children} (SDG 16.2) remain underfunded. This points to potential disparities in how aid is allocated across peacebuilding priorities. Our framework offers a scalable approach for tracking aid contributions to SDG 16. By enhancing transparency and supporting evidence-based decision-making, it can guide more targeted and equitable funding supporting peacebuilding efforts.
 
-## 🧭 Project Objective
+## Getting started
 
-Global development efforts increasingly emphasize alignment with policy goals. However,
-existing aid reporting systems, most notably the Organisation for Economic Co-operation
-and Development (OECD) Creditor Reporting System (CRS), offer only limited insight
-into the actual content of funded projects. This is particularly problematic in the domain
-of peacebuilding, where overly broad purpose codes subsume a wide range of divergent
-initiatives without sufficient differentiation. Furthermore, despite the presence of global
-policy frameworks like the Sustainable Development Goals (SDGs), CRS data remains poorly
-aligned with their target-level categories. The current SDG labelling practice is applied
-inconsistently and lacks semantic precision, creating a fundamental gap in the evaluation
-of aid alignment. This thesis aims to close this gap by developing a scalable classification
-framework that semantically maps aid project descriptions to specific SDG sub-targets. The
-method leverages a zero-shot classification approach using the BART-large-MNLI model,
-which evaluates semantic entailment between policy prompts and project texts. A total of
-over 68,000 projects were classified to SDG targets 16.1–16.4, 16.6, 16.8 and 5.2. The results
-demonstrate that the proposed framework enables substantially greater thematic resolution
-compared to the existing CRS purpose codes and SDG labels. The framework enables more
-accurate mappings between disbursement flows and normative goals, and can be part of
-more robust monitoring and evaluation systems in international cooperation.
+### 1. Clone the repository:
+
+git clone https://github.com/forsterkerstin/monitoring-public-health.git
+
+Clone the repository:
+
+git clone https://github.com/forsterkerstin/monitoring-public-health.git
+Install dependencies:
+
+pip install -r requirements.txt
+Download data: Download the required data folder from https://osf.io/ce3q2/ and place it at root level, as specified in the folder structure below.
+
+Run scripts: The data and plots folders will be automatically created at runtime as needed by the scripts.
+
+Run the scripts in the following order: preprocessing 
+→
+ classification 
+→
+ visualization. You can run main.py to execute the core analysis scripts without incurring API costs.
+
+Preprocessing:
+01_detect_language.py
+02_translate_texts.py
+03_combine_aid_funding_datasets.py
+Classification:
+04_llm_classification.py
+05_keyword_classification.py
+06_add_classification_to_aid_data.py
+Visualization:
+07_aid_funding_plots.py
+08_correlation_and_funding_disparities_plots.py
+09_comparing_classification_methods.py
+Note: main.py is provided to run only the visualization and analysis scripts, as the translation and classification scripts require paid API keys.
+
+
 
 ## 🛠️ How to Run the Code
 
