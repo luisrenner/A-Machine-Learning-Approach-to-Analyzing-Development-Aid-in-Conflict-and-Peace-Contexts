@@ -1,4 +1,4 @@
-# A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts
+# A Machine Learning Approach to Analyzing Development Aid in Conflict and Peace Contexts
 
 ## Abstract
 
