@@ -1,6 +1,7 @@
 # Bibliotheken importieren
 import pandas as pd
 import string
+import re
 from deep_translator import GoogleTranslator
 from tqdm import tqdm
 from google.colab import drive
