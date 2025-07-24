@@ -1,6 +1,5 @@
 # Bibliotheken importieren
 import pandas as pd
-import re
 import string
 from deep_translator import GoogleTranslator
 from tqdm import tqdm
