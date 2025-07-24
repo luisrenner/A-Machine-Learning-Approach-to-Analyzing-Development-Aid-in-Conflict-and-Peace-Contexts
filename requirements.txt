@@ -2,7 +2,6 @@ deep-translator
 transformers
 tqdm
 pandas
-google.colab
 re
 string
 datasets
