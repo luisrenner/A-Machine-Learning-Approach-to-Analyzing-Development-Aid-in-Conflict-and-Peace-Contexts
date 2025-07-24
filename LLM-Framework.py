@@ -109,3 +109,69 @@ df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
 
 # Speichern
 df.to_csv("Civilian Peacebuilding SDG-Mapped.csv", index=False)
+
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+
+# CSV laden
+df = pd.read_csv("Civilian Peacebuilding Translated.csv")
+df = df[df['TranslatedText'].notna()].reset_index(drop=True)
+
+# SINGLE-PROMPT-Hypothesen für jedes SDG
+sdg_prompts = {
+    "Significantly reduce all forms of violence and related death rates everywhere (SDG 16.1)": [
+        "This project aims to significantly reduce all forms of violence and related death rates everywhere."
+    ],
+    "End abuse, exploitation, trafficking and all forms of violence against and torture of children (SDG 16.2)": [
+        "This project aims to end abuse, exploitation, trafficking and all forms of violence against and torture of children."
+    ],
+    "Promote the rule of law at the national and international levels and ensure equal access to justice for all (SDG 16.3)": [
+        "This project aims to promote the rule of law at the national and international levels and ensure equal access to justice for all."
+    ],
+    "By 2030, significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime (SDG 16.4)": [
+        "This project aims to significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime."
+    ],
+    "Eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation (SDG 5.2)": [
+        "This project aims to eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation."
+    ],
+    "Develop effective, accountable and transparent institutions at all levels (SDG 16.6)": [
+        "This project aims to develop effective, accountable and transparent institutions at all levels."
+    ],
+    "Broaden and strengthen the participation of developing countries in the institutions of global governance (SDG 16.8)": [
+        "This project aims to broaden and strengthen the participation of developing countries in the institutions of global governance."
+    ]
+}
+
+# Klassifikationsdurchlauf mit Mean Aggregation
+results_dict = {k: [] for k in sdg_prompts.keys()}
+top_sdgs = []
+top_scores = []
+
+for i, text in tqdm(enumerate(df["TranslatedText"]), total=len(df), desc="🔍 Classifying"):
+    sdg_scores = {}
+    for sdg, prompts in sdg_prompts.items():
+        scores = []
+        for hyp in prompts:
+            res = classifier(text, [hyp], multi_label=False)
+            scores.append(res["scores"][0])
+        sdg_scores[sdg] = np.mean(scores)  # <- mean aggregation
+        results_dict[sdg].append(sdg_scores[sdg])
+
+    # Top SDG
+    top_sdg = max(sdg_scores, key=sdg_scores.get)
+    top_sdgs.append(top_sdg)
+    top_scores.append(sdg_scores[top_sdg])
+
+# DataFrame zusammenführen
+for k in results_dict:
+    df[k] = results_dict[k]
+df["Top_SDG"] = top_sdgs
+df["Top_Score"] = top_scores
+
+# Relevante SDGs (Score > 0.4)
+def assign_sdg(row):
+    return [sdg for sdg in sdg_prompts if row[sdg] > 0.4]
+
+df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
+
+# Speichern
+df.to_csv("Civilian Peacebuilding SDG-Mapped single prompt.csv", index=False)
