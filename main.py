@@ -1,12 +1,13 @@
+# Bibliotheken importieren
+import pandas as pd
+import re
+import string
+from deep_translator import GoogleTranslator
+from google.colab import files
+from tqdm import tqdm
+from google.colab import drive
+
 main(
-  # Bibliotheken importieren
-  import pandas as pd
-  import re
-  import string
-  from deep_translator import GoogleTranslator
-  from google.colab import files
-  from tqdm import tqdm
-  from google.colab import drive
 
   # CSV laden
   df = pd.read_csv("Civilian Peacebuilding Dataset.csv")
@@ -28,4 +29,5 @@ main(
 
   # Speichern
   df.to_csv("Civilian Peacebuilding Translated.csv", index=False)
+
 )
