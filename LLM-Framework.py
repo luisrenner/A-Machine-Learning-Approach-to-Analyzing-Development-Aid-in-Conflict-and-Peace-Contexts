@@ -15,6 +15,7 @@ from unidecode import unidecode
 from matplotlib.colors import Normalize
 import seaborn as sns
 from scipy.stats import pearsonr
+import statsmodels.api as sm
 
 # CSV laden
 df = pd.read_csv("Civilian Peacebuilding Dataset.csv")
@@ -581,3 +582,141 @@ ax.legend(
 plt.tight_layout()
 plt.savefig("USD_disbursements_(in millions)_top_countries_over_time.pdf", bbox_inches="tight")
 plt.show()
+
+# Stil
+plt.style.use("seaborn-v0_8-whitegrid")
+sns.set_palette("colorblind")
+
+# Dateipfade
+aid_path = "Peace & Conflict SDG Mapped 2023.csv"
+conflict_path = "2024 - Results.csv"
+
+# Aid-Daten laden und aggregieren
+df_aid = pd.read_csv(aid_path)
+df_aid["USD_Disbursement"] = (
+    df_aid["USD_Disbursement"]
+    .astype(str)
+    .str.replace(",", "")
+    .astype(float)
+)
+df_aid_grouped = (
+    df_aid.groupby("RecipientName", as_index=False)["USD_Disbursement"]
+    .sum()
+    .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023"})
+)
+
+# Konfliktdaten laden
+df_conflict = pd.read_csv(conflict_path)
+conflict_cols = ["Country", "Total Score", "Deadliness Value", "Diffusion Value",
+                 "Danger Value", "Fragmentation Value"]
+df_conflict = df_conflict[conflict_cols].copy()
+df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
+
+# Mergen
+df_merged = pd.merge(df_aid_grouped, df_conflict, on="Country", how="inner")
+
+# Scatterplots generieren
+indicators = ["Total_Score", "Deadliness_Value", "Diffusion_Value", "Danger_Value", "Fragmentation_Value"]
+
+for indicator in indicators:
+    plt.figure(figsize=(6, 4))
+
+    # Plot mit Regressionslinie
+    sns.regplot(data=df_merged, x="Aid_2023", y=indicator, scatter_kws={"alpha": 0.4}, line_kws={"color": "red"})
+
+    # Korrelation berechnen
+    corr_value = df_merged["Aid_2023"].corr(df_merged[indicator])
+    plt.text(0.05, 0.95, f"Correlation: {corr_value:.2f}", transform=plt.gca().transAxes,
+             fontsize=12, verticalalignment="top", weight="bold")
+
+    plt.xlabel("Disbursements (in USD millions) 2023")
+    plt.ylabel(indicator.replace("_", " ").capitalize() + " 2024")
+    plt.tight_layout()
+
+    # Speichern (optional)
+    filename = f"Scatter_aid2023_vs_{indicator.lower()}_2024.pdf"
+    plt.savefig(filename)
+
+    plt.show()
+
+# Stil
+plt.style.use("seaborn-v0_8-whitegrid")
+sns.set_palette("colorblind")
+
+# Dateipfade
+aid_path = "Peace & Conflict SDG Mapped 2023.csv"
+conflict_path = "2024 - Results.csv"
+
+# Aid-Daten laden
+df_aid = pd.read_csv(aid_path)
+df_aid["USD_Disbursement"] = (
+    df_aid["USD_Disbursement"]
+    .astype(str)
+    .str.replace(",", "")
+    .astype(float)
+)
+
+# Gruppieren nach Land und SDG
+df_sdg_grouped = (
+    df_aid.groupby(["RecipientName", "AssignedLabel"], as_index=False)["USD_Disbursement"]
+    .sum()
+    .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023", "AssignedLabel": "SDG"})
+)
+
+# Konfliktdaten laden
+df_conflict = pd.read_csv(conflict_path)
+df_conflict = df_conflict[["Country", "Total Score"]].copy()
+df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
+
+# Mergen
+df_merged = pd.merge(df_sdg_grouped, df_conflict, on="Country", how="inner")
+
+# Scatterplots pro SDG
+for target in sorted(df_merged["SDG"].dropna().unique()):
+    sub = df_merged[df_merged["SDG"] == target].copy()
+
+    # Nur weiter, wenn ausreichend Daten vorhanden
+    if len(sub) < 5 or sub["Aid_2023"].sum() == 0:
+        continue
+
+    # Regression vorbereiten
+    X = sub["Aid_2023"]
+    y = sub["Total_Score"]
+    X_const = sm.add_constant(X)
+    model = sm.OLS(y, X_const).fit()
+    pred_summary = model.get_prediction(X_const).summary_frame(alpha=0.05)
+
+    # Plot erstellen
+    plt.figure(figsize=(6, 4))
+    plt.scatter(X, y, alpha=0.6)
+
+    # Regressionslinie und Konfidenzband sortiert plotten
+    sort_idx = X.argsort()
+    x_sorted = X.iloc[sort_idx]
+    mean = pred_summary["mean"].iloc[sort_idx]
+    ci_low = pred_summary["mean_ci_lower"].iloc[sort_idx]
+    ci_up = pred_summary["mean_ci_upper"].iloc[sort_idx]
+
+    plt.plot(x_sorted, mean, color="red")
+    plt.fill_between(x_sorted, ci_low, ci_up, color="red", alpha=0.2)
+
+    # Statistische Annotationen
+    corr, p = pearsonr(X, y)
+    r2 = model.rsquared_adj
+    plt.text(
+        0.05, 0.95,
+        f"Correlation: {corr:.2f}\n$p$-value: {p:.3f}\nAdj. $R^2$: {r2:.2f}",
+        transform=plt.gca().transAxes,
+        fontsize=11, verticalalignment="top", weight="bold"
+    )
+
+    # Achsentitel und Layout
+    plt.xlabel("Disbursements (in USD millions) 2023")
+    plt.ylabel("Total conflict score 2024")
+    plt.tight_layout()
+
+    # Speichern
+    safe_target = str(target).replace(".", "_")
+    out_path = f"Scatter_aid2023_vs_total_score_2024_SDG_{safe_target}.pdf"
+    plt.savefig(out_path)
+    plt.show()
