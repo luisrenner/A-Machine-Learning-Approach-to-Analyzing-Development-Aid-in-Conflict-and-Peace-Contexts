@@ -41,7 +41,7 @@ df.to_csv("data/Civilian Peacebuilding Translated.csv", index=False)
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 # CSV laden
-df = pd.read_csv("Civilian Peacebuilding Translated.csv")
+df = pd.read_csv("data/Civilian Peacebuilding Translated.csv")
 df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
 # MULTI-PROMPT-Hypothesen für jedes SDG
