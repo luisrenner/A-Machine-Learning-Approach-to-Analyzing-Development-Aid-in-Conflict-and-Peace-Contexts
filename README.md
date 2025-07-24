@@ -16,17 +16,26 @@ pip install -r requirements.txt
 
 ### 3. Download data
 
-Download the required data folder from https://stats.oecd.org/Index.aspx?DataSetCode=CRS1 and place it at root level, as specified in the folder structure below.
+Download the required data from https://stats.oecd.org/Index.aspx?DataSetCode=CRS1 and place a data folder at root level, as specified in the folder structure below.
+
+Place all the downloaded data in the data folder.
 
 ### 4. Run code
 
-The data and plots folders will be automatically created at runtime as needed by the scripts.
+Run the full code with the following command:
 
-Run the scripts in the following order: preprocessing → classification → visualization. 
+    python LLM-Framework.py
 
-#### Preprocessing
+### Folder structure
 
-01_preprocessing.py
-02_bart_large_mnli_classification.py
-05_keyword_classification.py
-06_add_classification_to_aid_data.py
+```
+A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts/
+├── LLM-Framework
+├── README.md
+├── requirements.txt
+├── data/
+    ├──Civilian Peacebuilding Dataset.csv
+    ├──Peace & Conflict SDG Mapped.csv
+    ├──jahresausgaben_nach_laendern_und_purpose.csv
+    ├──Peace & Conflict SDG Mapped 2023.csv
+    ├──2024 - Results.csv
