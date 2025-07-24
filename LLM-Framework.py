@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from unidecode import unidecode
 from matplotlib.colors import Normalize
 import seaborn as sns
+from scipy.stats import pearsonr
 
 # CSV laden
 df = pd.read_csv("Civilian Peacebuilding Dataset.csv")
@@ -404,7 +405,7 @@ plt.savefig("Map_total.pdf", bbox_inches="tight")
 plt.close()
 
 # Daten laden
-df = pd.read_csv("/content/drive/MyDrive/Peace & Conflict SDG Mapped.csv", low_memory=False)
+df = pd.read_csv("Peace & Conflict SDG Mapped.csv", low_memory=False)
 df["USD_Disbursement"] = (
     df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
 )
