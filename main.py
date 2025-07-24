@@ -3,7 +3,6 @@ import pandas as pd
 import re
 import string
 from deep_translator import GoogleTranslator
-from google.colab import files
 from tqdm import tqdm
 from google.colab import drive
 
