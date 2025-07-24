@@ -2,7 +2,6 @@ deep-translator
 transformers
 tqdm
 pandas
-string
 datasets
 torch
 numpy
