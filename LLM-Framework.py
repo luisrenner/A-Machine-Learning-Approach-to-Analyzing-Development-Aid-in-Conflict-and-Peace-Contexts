@@ -13,6 +13,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 from unidecode import unidecode
 from matplotlib.colors import Normalize
+import seaborn as sns
 
 # CSV laden
 df = pd.read_csv("Civilian Peacebuilding Dataset.csv")
@@ -401,3 +402,181 @@ ax.axis("off")
 plt.tight_layout()
 plt.savefig("Map_total.pdf", bbox_inches="tight")
 plt.close()
+
+# Daten laden
+df = pd.read_csv("/content/drive/MyDrive/Peace & Conflict SDG Mapped.csv", low_memory=False)
+df["USD_Disbursement"] = (
+    df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
+)
+df = df[df["AssignedLabel"].notna()].copy()
+df["AssignedLabel"] = df["AssignedLabel"].astype(str)
+
+# Aggregation
+bar_data = df.groupby("AssignedLabel")["USD_Disbursement"].sum()
+sdg_order = ["16.1", "16.3", "16.8", "16.6", "16.2", "5.2", "16.4"]
+bar_data = bar_data.reindex(sdg_order)
+
+# Farben: farbenblindensichere, kräftige Tol-Palette
+color_palette = [
+    "#332288",  # dunkelblau
+    "#117733",  # grün
+    "#88CCEE",  # hellblau
+    "#DDCC77",  # sandgelb
+    "#555555",  # dunkelgrau
+    "#AA4499",  # violett
+    "#44AA99",  # türkisgrün
+]
+
+# Plot
+fig, ax = plt.subplots(figsize=(12, 6))
+bars = ax.bar([f"SDG {k}" for k in bar_data.index], bar_data.values, color=color_palette)
+
+# Achsen und Layout
+ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
+ax.tick_params(axis='x', labelsize=14)
+ax.tick_params(axis='y', labelsize=14)
+ax.spines[['top', 'right']].set_visible(False)
+ax.grid(axis='y', linestyle='--', alpha=0.5)
+ax.set_axisbelow(True)
+
+# Export
+plt.tight_layout()
+plt.savefig("SDG_disbursements.pdf")
+plt.show()
+
+# Stil & Farben
+plt.style.use("seaborn-v0_8-whitegrid")
+sns.set_palette("colorblind")
+
+# CSV laden
+csv_path = "jahresausgaben_nach_laendern_und_purpose.csv"
+df = pd.read_csv(csv_path)
+df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+# Beträge bereinigen
+df["usd_disbursement_in_millions"] = (
+    df["usd_disbursement_in_millions"]
+    .astype(str)
+    .str.replace(",", "")
+    .astype(float)
+)
+
+# Mikro-Cluster entfernen
+df = df[df["purpose_name"] != "Conflict, Peace & Security"]
+
+# Gruppieren
+df_grouped = (
+    df.groupby(["year", "purpose_name"], as_index=False)["usd_disbursement_in_millions"]
+    .sum()
+)
+
+# Plot-Vorbereitung
+fig, ax = plt.subplots(figsize=(14, 8))
+years_full = list(range(df_grouped["year"].min(), df_grouped["year"].max() + 1))
+purpose_order = df_grouped.groupby("purpose_name")["year"].min().sort_values().index
+colors = sns.color_palette("colorblind", n_colors=len(purpose_order))
+
+# Linien zeichnen
+for i, purpose in enumerate(purpose_order):
+    sub = df_grouped[df_grouped["purpose_name"] == purpose].set_index("year")
+    sub = sub.reindex(years_full, fill_value=0).reset_index()
+    ax.plot(
+        sub["year"],
+        sub["usd_disbursement_in_millions"],
+        label=purpose,
+        linewidth=2.2,
+        color=colors[i]
+    )
+
+# Achsenbeschriftung
+ax.set_xlabel("Year", fontsize=18)
+ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
+ax.tick_params(axis='both', labelsize=16)
+
+# Legende
+legend = ax.legend(
+    title="Purpose",
+    title_fontsize=18,
+    fontsize=16,
+    loc="upper left",
+    frameon=True,
+    framealpha=0.95,
+    facecolor="white",
+    edgecolor="gray"
+)
+
+# Export
+plt.tight_layout()
+plt.savefig("USD_disbursements_(in_millions)_purpose_names_over_time.pdf", bbox_inches="tight")
+plt.show()
+
+# Stil
+plt.style.use("seaborn-v0_8-whitegrid")
+sns.set_palette("colorblind")
+
+# Daten einlesen
+csv_path = "jahresausgaben_nach_laendern_und_purpose.csv"
+df = pd.read_csv(csv_path)
+
+# Spaltennamen vereinheitlichen
+df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+# Beträge bereinigen
+df["usd_disbursement_in_millions"] = (
+    df["usd_disbursement_in_millions"]
+    .astype(str)
+    .str.replace(",", "")
+    .astype(float)
+)
+
+# Auswahl der Länder
+countries = [
+    "Afghanistan", "Iraq", "Colombia", "Ukraine", "Democratic Republic of the Congo", "Syrian Arab Republic", "Sudan", "Somalia"
+]
+
+df_filtered = df[df["recipient_name_(en)"].isin(countries)]
+
+# Gruppieren
+df_grouped = (
+    df_filtered.groupby(["year", "recipient_name_(en)"], as_index=False)
+    ["usd_disbursement_in_millions"].sum()
+)
+
+# Vorbereitung für Plot
+fig, ax = plt.subplots(figsize=(14, 8))
+years_full = list(range(1992, df_grouped["year"].max() + 1))
+country_order = df_grouped.groupby("recipient_name_(en)")["usd_disbursement_in_millions"].sum().sort_values(ascending=False).index
+colors = sns.color_palette("colorblind", n_colors=len(country_order))
+
+# Plotten
+for i, country in enumerate(country_order):
+    sub = df_grouped[df_grouped["recipient_name_(en)"] == country].set_index("year")
+    sub = sub.reindex(years_full, fill_value=0).reset_index()
+    ax.plot(
+        sub["year"],
+        sub["usd_disbursement_in_millions"],
+        label=country,
+        linewidth=2.2,
+        color=colors[i]
+    )
+
+# Achsenbeschriftung
+ax.set_xlabel("Year", fontsize=18)
+ax.set_ylabel("USD Disbursements in Millions", fontsize=18)
+ax.tick_params(axis='both', labelsize=16)
+
+# Legende oben links
+ax.legend(
+    title="Country",
+    title_fontsize=18,
+    fontsize=16,
+    loc="upper left",
+    frameon=True,
+    facecolor="white",
+    edgecolor="gray"
+)
+
+# Export
+plt.tight_layout()
+plt.savefig("USD_disbursements_(in millions)_top_countries_over_time.pdf", bbox_inches="tight")
+plt.show()
