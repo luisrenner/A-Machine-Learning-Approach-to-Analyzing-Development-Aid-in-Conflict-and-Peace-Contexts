@@ -8,7 +8,7 @@ Peace-building is a central objective of global development, particularly under 
 
 ### 1. Clone the repository
 
-git clone https://github.com/luisrenner/A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts.git
+    git clone https://github.com/luisrenner/A-Machine-Learning-Approach-to-Analyzing-Development-Aid-in-Conflict-and-Peace-Contexts.git
 
 ### 2. Install requirements
 
