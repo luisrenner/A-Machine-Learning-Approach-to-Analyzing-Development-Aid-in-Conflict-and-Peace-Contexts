@@ -294,3 +294,110 @@ for label in unique_sdg_labels:
     output_path = f"Map_{label}.pdf"
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
+
+# Daten laden
+df = pd.read_csv("Peace & Conflict SDG Mapped.csv", low_memory=False)
+
+# Empfängerländer bereinigen
+df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
+df["USD_Disbursement"] = (
+    df["USD_Disbursement"]
+    .astype(str)
+    .str.replace(",", "")
+    .astype(float)
+)
+
+# Regionale/unspezifische Empfänger ausschließen
+non_countries = [
+    "africa, regional", "america, regional", "asia, regional", "europe, regional",
+    "oceania, regional", "south america, regional", "south asia, regional",
+    "western africa, regional", "eastern africa, regional", "southern africa, regional",
+    "central asia, regional", "central america, regional", "middle east, regional",
+    "middle africa, regional", "caribbean, regional", "caribbean & central america, regional",
+    "far east asia, regional", "north of sahara, regional", "south of sahara, regional",
+    "south & central asia, regional", "melanesia, regional", "bilateral, unspecified",
+    "states ex-yugoslavia unspecified", "tokelau"
+]
+df = df[~df["RecipientName_clean"].isin(non_countries)].copy()
+
+# Mapping abweichender Ländernamen
+manual_map = {
+    "china (people's republic of)": "china",
+    "democratic people's republic of korea": "north korea",
+    "democratic republic of the congo": "democratic republic of the congo",
+    "cote d'ivoire": "ivory coast",
+    "lao people's democratic republic": "laos",
+    "syrian arab republic": "syria",
+    "viet nam": "vietnam",
+    "turkiye": "turkey",
+    "micronesia": "micronesia (federated states of)",
+    "west bank and gaza strip": "palestine",
+    "congo": "republic of the congo",
+    "north macedonia": "north macedonia",
+    "cabo verde": "cape verde",
+    "eswatini": "swaziland",
+    "timor-leste": "east timor",
+    "sao tome and principe": "são tomé and príncipe",
+    "trinidad and tobago": "trinidad and tobago",
+    "myanmar": "myanmar",
+    "kosovo": "kosovo",
+    "republic of moldova": "moldova",
+    "bahamas, the": "bahamas",
+    "gambia, the": "gambia",
+    "venezuela (bolivarian republic of)": "venezuela",
+    "iran (islamic republic of)": "iran",
+    "russian federation": "russia",
+    "bolivia (plurinational state of)": "bolivia",
+    "tanzania, united republic of": "tanzania",
+    "korea, republic of": "south korea",
+    "türkiye": "turkey",
+    "serbia": "republic of serbia"
+}
+
+# Weltkarte laden
+world = gpd.read_file("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
+world["name"] = world["name"].str.strip().str.lower()
+
+# Mapping anwenden & aggregieren
+df["MatchName"] = df["RecipientName_clean"].replace(manual_map)
+total_data = df.groupby("MatchName", as_index=False)["USD_Disbursement"].sum()
+
+# Merge mit Weltkarte
+merged = world.merge(total_data, how="left", left_on="name", right_on="MatchName")
+
+# Plot
+fig, ax = plt.subplots(figsize=(28, 14))
+norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
+
+merged.plot(
+    column="USD_Disbursement",
+    cmap="Reds",
+    linewidth=0.5,
+    edgecolor="white",
+    ax=ax,
+    legend=True,
+    norm=norm,
+    missing_kwds={
+        "color": "white",        # Länder ohne Funding
+        "edgecolor": "lightgray" # Dezente Umrandung
+    },
+    legend_kwds={
+        "shrink": 0.6,
+        "orientation": "horizontal"
+    }
+)
+
+# Schriftgröße nachträglich setzen
+colorbar = ax.get_figure().get_axes()[-1]
+colorbar.tick_params(labelsize=30)
+colorbar.set_xlabel("Disbursements (in USD millions)", fontsize=30)
+
+# Karte begrenzen (Arktis & überflüssige Ränder entfernen)
+ax.set_ylim(-60, 85)
+ax.set_xlim(-150, 150)
+ax.axis("off")
+
+# Speichern
+plt.tight_layout()
+plt.savefig("Map_total.pdf", bbox_inches="tight")
+plt.close()
