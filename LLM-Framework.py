@@ -34,20 +34,18 @@ results2024_filepath = "data/2024 - Results.csv"
 aidvsindicator = f"data/Scatter_aid2023_vs_"
 aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_"
 
-df = None
-
 def read_input(filepath):
 
-  df = pd.read_csv(filepath)
+  return pd.read_csv(filepath)
 
 def read_input_lowmemory(filepath):
 
-  df = pd.read_csv(filepath, low_memory=False)
+  return pd.read_csv(filepath, low_memory=False)
 
 def concatenate_and_translate():
 
   # CSV laden
-  read_input(input_filepath)
+  df = read_input(input_filepath)
 
   # Texte kombinieren
   df['FullText'] = df[['ProjectTitle', 'ShortDescription', 'LongDescription']].fillna('').agg(' '.join, axis=1)
@@ -72,7 +70,7 @@ def multi_prompt_mapping():
   classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
   # CSV laden
-  read_input(translated_filepath)
+  df = read_input(translated_filepath)
   df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
   # MULTI-PROMPT-Hypothesen für jedes SDG
@@ -153,7 +151,7 @@ def single_prompt_mapping():
   classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
   # CSV laden
-  read_input(translated_filepath)
+  df = read_input(translated_filepath)
   df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
   # SINGLE-PROMPT-Hypothesen für jedes SDG
@@ -219,7 +217,7 @@ def single_prompt_mapping():
 def worldmapsdg():
 
   # Daten laden
-  read_input_lowmemory(allmapped_filepath)
+  df = read_input_lowmemory(allmapped_filepath)
 
   # Empfängerländer bereinigen
   df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -336,7 +334,7 @@ def worldmapsdg():
 def worldmaptotal():
 
   # Daten laden
-  read_input_lowmemory(allmapped_filepath)
+  df = read_input_lowmemory(allmapped_filepath)
 
   # Empfängerländer bereinigen
   df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -445,7 +443,7 @@ def worldmaptotal():
 def sdgdisbursements():
 
   # Daten laden
-  read_input_lowmemory(allmapped_filepath)
+  df = read_input_lowmemory(allmapped_filepath)
   df["USD_Disbursement"] = (
       df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
   )
@@ -492,7 +490,7 @@ def purposenamesovertime():
   sns.set_palette("colorblind")
 
   # CSV laden
-  read_input(yearscountries_filepath)
+  df = read_input(yearscountries_filepath)
   df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
   # Beträge bereinigen
@@ -559,7 +557,7 @@ def countriesovertime():
   sns.set_palette("colorblind")
 
   # Daten einlesen
-  read_input(yearscountries_filepath)
+  df = read_input(yearscountries_filepath)
 
   # Spaltennamen vereinheitlichen
   df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
@@ -631,7 +629,7 @@ def aidvsindicators():
   sns.set_palette("colorblind")
 
   # Aid-Daten laden und aggregieren
-  read_input_lowmemory(allmapped2023_filepath)
+  df = read_input_lowmemory(allmapped2023_filepath)
   df_aid["USD_Disbursement"] = (
       df_aid["USD_Disbursement"]
       .astype(str)
