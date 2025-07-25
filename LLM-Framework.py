@@ -311,7 +311,7 @@ for label in unique_sdg_labels:
 
     # Speichern
     plt.tight_layout()
-    output_path = output_filepath+str.(label)+".pdf" 
+    output_path = output_filepath+str(label)+".pdf" 
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
 
