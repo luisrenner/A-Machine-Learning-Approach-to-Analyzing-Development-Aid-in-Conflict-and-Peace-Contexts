@@ -34,10 +34,18 @@ results2024_filepath = "data/2024 - Results.csv"
 aidvsindicator = f"data/Scatter_aid2023_vs_"
 aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_"
 
+def read_input(filepath):
+
+  df = pd.read_csv(filepath)
+
+def read_input_lowmemory(filepath):
+
+  df = pd.read_csv(filepath, low_memory=False)
+
 def concatenate_and_translate():
 
   # CSV laden
-  df = pd.read_csv(input_filepath)
+  read_input(input_filepath)
 
   # Texte kombinieren
   df['FullText'] = df[['ProjectTitle', 'ShortDescription', 'LongDescription']].fillna('').agg(' '.join, axis=1)
@@ -62,7 +70,7 @@ def multi_prompt_mapping():
   classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
   # CSV laden
-  df = pd.read_csv(translated_filepath)
+  read_input(translated_filepath)
   df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
   # MULTI-PROMPT-Hypothesen für jedes SDG
@@ -143,7 +151,7 @@ def single_prompt_mapping():
   classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
   # CSV laden
-  df = pd.read_csv(translated_filepath)
+  read_input(translated_filepath)
   df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
   # SINGLE-PROMPT-Hypothesen für jedes SDG
@@ -209,7 +217,7 @@ def single_prompt_mapping():
 def worldmapsdg():
 
   # Daten laden
-  df = pd.read_csv(allmapped_filepath, low_memory=False)
+  read_input_lowmemory(allmapped_filepath)
 
   # Empfängerländer bereinigen
   df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -326,7 +334,7 @@ def worldmapsdg():
 def worldmaptotal():
 
   # Daten laden
-  df = pd.read_csv(allmapped_filepath, low_memory=False)
+  read_input_lowmemory(allmapped_filepath)
 
   # Empfängerländer bereinigen
   df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -435,7 +443,7 @@ def worldmaptotal():
 def sdgdisbursements():
 
   # Daten laden
-  df = pd.read_csv(allmapped_filepath, low_memory=False)
+  read_input_lowmemory(allmapped_filepath)
   df["USD_Disbursement"] = (
       df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
   )
@@ -482,8 +490,7 @@ def purposenamesovertime():
   sns.set_palette("colorblind")
 
   # CSV laden
-  csv_path = yearscountries_filepath
-  df = pd.read_csv(csv_path)
+  read_input(yearscountries_filepath)
   df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
   # Beträge bereinigen
@@ -550,8 +557,7 @@ def countriesovertime():
   sns.set_palette("colorblind")
 
   # Daten einlesen
-  csv_path = yearscountries_filepath
-  df = pd.read_csv(csv_path)
+  read_input(yearscountries_filepath)
 
   # Spaltennamen vereinheitlichen
   df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
@@ -623,7 +629,7 @@ def aidvsindicators():
   sns.set_palette("colorblind")
 
   # Aid-Daten laden und aggregieren
-  df_aid = pd.read_csv(allmapped2023_filepath)
+  read_input_lowmemory(allmapped2023_filepath)
   df_aid["USD_Disbursement"] = (
       df_aid["USD_Disbursement"]
       .astype(str)
@@ -637,7 +643,7 @@ def aidvsindicators():
   )
 
   # Konfliktdaten laden
-  df_conflict = pd.read_csv(results2024_filepath)
+  df_conflict = read_input_lowmemory(results2024_filepath)
   conflict_cols = ["Country", "Total Score", "Deadliness Value", "Diffusion Value",
                    "Danger Value", "Fragmentation Value"]
   df_conflict = df_conflict[conflict_cols].copy()
@@ -678,7 +684,7 @@ def aidvsindicatorstotal():
   sns.set_palette("colorblind")
 
   # Aid-Daten laden
-  df_aid = pd.read_csv(allmapped2023_filepath)
+  df_aid = read_input(allmapped2023_filepath)
   df_aid["USD_Disbursement"] = (
       df_aid["USD_Disbursement"]
       .astype(str)
@@ -694,7 +700,7 @@ def aidvsindicatorstotal():
   )
 
   # Konfliktdaten laden
-  df_conflict = pd.read_csv(results2024_filepath)
+  df_conflict = read_input_lowmemory(results2024_filepath)
   df_conflict = df_conflict[["Country", "Total Score"]].copy()
   df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
 
