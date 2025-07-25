@@ -32,7 +32,7 @@ countriesovertime_filepath = "data/USD_disbursements_(in millions)_top_countries
 allmapped2023_filepath = "data/Peace & Conflict SDG Mapped 2023.csv"
 results2024_filepath = "data/2024 - Results.csv"
 aidvsindicator = f"data/Scatter_aid2023_vs_"
-aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_{safe_target}.pdf"
+aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_"
 
 # CSV laden
 df = pd.read_csv(input_filepath)
