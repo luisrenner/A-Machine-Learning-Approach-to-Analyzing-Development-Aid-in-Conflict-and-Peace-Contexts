@@ -647,7 +647,7 @@ for indicator in indicators:
     plt.tight_layout()
 
     # Speichern
-    filename = aidvsindicator+indicator.lower()}+"_2024.pdf"
+    filename = aidvsindicator+indicator.lower()+"_2024.pdf"
     plt.savefig(filename)
 
     plt.show()
