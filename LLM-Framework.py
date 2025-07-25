@@ -732,11 +732,11 @@ def aidvsindicatortotal():
       # Statistische Annotationen
       corr, p = pearsonr(X, y)
       r2 = model.rsquared_adj
-        plt.text(
-          0.05, 0.95,
-          f"Correlation: {corr:.2f}\n$p$-value: {p:.3f}\nAdj. $R^2$: {r2:.2f}",
-          transform=plt.gca().transAxes,
-          fontsize=11, verticalalignment="top", weight="bold"
+      plt.text(
+        0.05, 0.95,
+        f"Correlation: {corr:.2f}\n$p$-value: {p:.3f}\nAdj. $R^2$: {r2:.2f}",
+        transform=plt.gca().transAxes,
+        fontsize=11, verticalalignment="top", weight="bold"
       )
 
       # Achsentitel und Layout
