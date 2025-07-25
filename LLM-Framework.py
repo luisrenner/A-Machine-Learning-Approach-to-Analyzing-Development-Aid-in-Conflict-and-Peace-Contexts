@@ -34,6 +34,8 @@ results2024_filepath = "data/2024 - Results.csv"
 aidvsindicator = f"data/Scatter_aid2023_vs_"
 aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_"
 
+df = null
+
 def read_input(filepath):
 
   df = pd.read_csv(filepath)
