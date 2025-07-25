@@ -399,7 +399,7 @@ def worldmaptotal():
   fig, ax = plt.subplots(figsize=(28, 14))
   norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
 
-merged.plot(
+  merged.plot(
     column="USD_Disbursement",
     cmap="Reds",
     linewidth=0.5,
@@ -416,7 +416,7 @@ merged.plot(
         "orientation": "horizontal"
     }
   )
-
+  
   # Schriftgröße nachträglich setzen
   colorbar = ax.get_figure().get_axes()[-1]
   colorbar.tick_params(labelsize=30)
