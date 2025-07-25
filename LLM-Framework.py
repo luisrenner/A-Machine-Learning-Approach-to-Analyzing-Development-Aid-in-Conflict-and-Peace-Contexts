@@ -325,8 +325,8 @@ def worldmapsdg():
 
 def worldmaptotal():
 
-    # Daten laden
-    df = pd.read_csv(allmapped_filepath, low_memory=False)
+  # Daten laden
+  df = pd.read_csv(allmapped_filepath, low_memory=False)
 
   # Empfängerländer bereinigen
   df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
