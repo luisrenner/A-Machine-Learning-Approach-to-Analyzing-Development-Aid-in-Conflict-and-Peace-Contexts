@@ -17,8 +17,25 @@ import seaborn as sns
 from scipy.stats import pearsonr
 import statsmodels.api as sm
 
+# Filepaths
+input_filepath = "data/Civilian Peacebuilding Dataset.csv"
+translated_filepath = "data/Civilian Peacebuilding Translated.csv"
+mapped_filepath = "data/Civilian Peacebuilding SDG-Mapped.csv"
+singlemapped_filepath = "data/Civilian Peacebuilding SDG-Mapped single prompt.csv"
+allmapped_filepath = "data/Peace & Conflict SDG Mapped.csv"
+output_filepath = f"data/Map_"
+worldmap_filepath = "data/Map_total.pdf"
+sdgdisbursements_filepath = "data/SDG_disbursements.pdf"
+yearscountries_filepath = "data/jahresausgaben_nach_laendern_und_purpose.csv"
+purposenamesovertime_filepath = "data/USD_disbursements_(in_millions)_purpose_names_over_time.pdf"
+countriesovertime_filepath = "data/USD_disbursements_(in millions)_top_countries_over_time.pdf"
+allmapped2023_filepath = "data/Peace & Conflict SDG Mapped 2023.csv"
+results2024_filepath = "data/2024 - Results.csv"
+aidvsindicator = f"data/Scatter_aid2023_vs_"
+aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_{safe_target}.pdf"
+
 # CSV laden
-df = pd.read_csv("data/Civilian Peacebuilding Dataset.csv")
+df = pd.read_csv(input_filepath)
 
 # Texte kombinieren
 df['FullText'] = df[['ProjectTitle', 'ShortDescription', 'LongDescription']].fillna('').agg(' '.join, axis=1)
@@ -36,12 +53,12 @@ for text in tqdm(df['FullText'].tolist()):
 df['TranslatedText'] = translated
 
 # Speichern
-df.to_csv("data/Civilian Peacebuilding Translated.csv", index=False)
+df.to_csv(translated_filepath, index=False)
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 # CSV laden
-df = pd.read_csv("data/Civilian Peacebuilding Translated.csv")
+df = pd.read_csv(translated_filepath)
 df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
 # MULTI-PROMPT-Hypothesen für jedes SDG
@@ -115,12 +132,12 @@ def assign_sdg(row):
 df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
 
 # Speichern
-df.to_csv("data/Civilian Peacebuilding SDG-Mapped.csv", index=False)
+df.to_csv(mapped_filepath, index=False)
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 # CSV laden
-df = pd.read_csv("data/Civilian Peacebuilding Translated.csv")
+df = pd.read_csv(translated_filepath)
 df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
 # SINGLE-PROMPT-Hypothesen für jedes SDG
@@ -181,10 +198,10 @@ def assign_sdg(row):
 df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
 
 # Speichern
-df.to_csv("data/Civilian Peacebuilding SDG-Mapped single prompt.csv", index=False)
+df.to_csv(singlemapped_filepath, index=False)
 
 # Daten laden
-df = pd.read_csv("data/Peace & Conflict SDG Mapped.csv", low_memory=False)
+df = pd.read_csv(allmapped_filepath, low_memory=False)
 
 # Empfängerländer bereinigen
 df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -294,12 +311,12 @@ for label in unique_sdg_labels:
 
     # Speichern
     plt.tight_layout()
-    output_path = f"data/Map_{label}.pdf"
+    output_path = output_filepath+label+".pdf" 
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
 
 # Daten laden
-df = pd.read_csv("data/Peace & Conflict SDG Mapped.csv", low_memory=False)
+df = pd.read_csv(allmapped_filepath, low_memory=False)
 
 # Empfängerländer bereinigen
 df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
@@ -402,11 +419,11 @@ ax.axis("off")
 
 # Speichern
 plt.tight_layout()
-plt.savefig("data/Map_total.pdf", bbox_inches="tight")
+plt.savefig(worldmap_filepath, bbox_inches="tight")
 plt.close()
 
 # Daten laden
-df = pd.read_csv("data/Peace & Conflict SDG Mapped.csv", low_memory=False)
+df = pd.read_csv(allmapped_filepath, low_memory=False)
 df["USD_Disbursement"] = (
     df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
 )
@@ -443,7 +460,7 @@ ax.set_axisbelow(True)
 
 # Export
 plt.tight_layout()
-plt.savefig("data/SDG_disbursements.pdf")
+plt.savefig(sdgdisbursements_filepath)
 plt.show()
 
 # Stil & Farben
@@ -451,7 +468,7 @@ plt.style.use("seaborn-v0_8-whitegrid")
 sns.set_palette("colorblind")
 
 # CSV laden
-csv_path = "data/jahresausgaben_nach_laendern_und_purpose.csv"
+csv_path = yearscountries_filepath
 df = pd.read_csv(csv_path)
 df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
@@ -509,7 +526,7 @@ legend = ax.legend(
 
 # Export
 plt.tight_layout()
-plt.savefig("data/USD_disbursements_(in_millions)_purpose_names_over_time.pdf", bbox_inches="tight")
+plt.savefig(purposenamesovertime_filepath, bbox_inches="tight")
 plt.show()
 
 # Stil
@@ -517,7 +534,7 @@ plt.style.use("seaborn-v0_8-whitegrid")
 sns.set_palette("colorblind")
 
 # Daten einlesen
-csv_path = "data/jahresausgaben_nach_laendern_und_purpose.csv"
+csv_path = yearscountries_filepath
 df = pd.read_csv(csv_path)
 
 # Spaltennamen vereinheitlichen
@@ -580,19 +597,15 @@ ax.legend(
 
 # Export
 plt.tight_layout()
-plt.savefig("data/USD_disbursements_(in millions)_top_countries_over_time.pdf", bbox_inches="tight")
+plt.savefig(countriesovertime_filepath, bbox_inches="tight")
 plt.show()
 
 # Stil
 plt.style.use("seaborn-v0_8-whitegrid")
 sns.set_palette("colorblind")
 
-# Dateipfade
-aid_path = "data/Peace & Conflict SDG Mapped 2023.csv"
-conflict_path = "data/2024 - Results.csv"
-
 # Aid-Daten laden und aggregieren
-df_aid = pd.read_csv(aid_path)
+df_aid = pd.read_csv(allmapped2023_filepath)
 df_aid["USD_Disbursement"] = (
     df_aid["USD_Disbursement"]
     .astype(str)
@@ -606,7 +619,7 @@ df_aid_grouped = (
 )
 
 # Konfliktdaten laden
-df_conflict = pd.read_csv(conflict_path)
+df_conflict = pd.read_csv(results2024_filepath)
 conflict_cols = ["Country", "Total Score", "Deadliness Value", "Diffusion Value",
                  "Danger Value", "Fragmentation Value"]
 df_conflict = df_conflict[conflict_cols].copy()
@@ -634,7 +647,7 @@ for indicator in indicators:
     plt.tight_layout()
 
     # Speichern
-    filename = f"data/Scatter_aid2023_vs_{indicator.lower()}_2024.pdf"
+    filename = aidvsindicator+indicator.lower()}+"_2024.pdf"
     plt.savefig(filename)
 
     plt.show()
@@ -643,12 +656,8 @@ for indicator in indicators:
 plt.style.use("seaborn-v0_8-whitegrid")
 sns.set_palette("colorblind")
 
-# Dateipfade
-aid_path = "data/Peace & Conflict SDG Mapped 2023.csv"
-conflict_path = "data/2024 - Results.csv"
-
 # Aid-Daten laden
-df_aid = pd.read_csv(aid_path)
+df_aid = pd.read_csv(allmapped2023_filepath)
 df_aid["USD_Disbursement"] = (
     df_aid["USD_Disbursement"]
     .astype(str)
@@ -664,7 +673,7 @@ df_sdg_grouped = (
 )
 
 # Konfliktdaten laden
-df_conflict = pd.read_csv(conflict_path)
+df_conflict = pd.read_csv(results2024_filepath)
 df_conflict = df_conflict[["Country", "Total Score"]].copy()
 df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
 
@@ -717,6 +726,6 @@ for target in sorted(df_merged["SDG"].dropna().unique()):
 
     # Speichern
     safe_target = str(target).replace(".", "_")
-    out_path = f"data/Scatter_aid2023_vs_total_score_2024_SDG_{safe_target}.pdf"
+    out_path = aidvsindicatortotal+safe_target+".pdf"
     plt.savefig(out_path)
     plt.show()
