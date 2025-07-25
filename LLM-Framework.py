@@ -311,7 +311,7 @@ for label in unique_sdg_labels:
 
     # Speichern
     plt.tight_layout()
-    output_path = output_filepath+label+".pdf" 
+    output_path = output_filepath+"{label}.pdf" 
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
 
@@ -647,7 +647,7 @@ for indicator in indicators:
     plt.tight_layout()
 
     # Speichern
-    filename = aidvsindicator+indicator.lower()+"_2024.pdf"
+    filename = aidvsindicator+"{indicator.lower()}_2024.pdf"
     plt.savefig(filename)
 
     plt.show()
@@ -726,6 +726,6 @@ for target in sorted(df_merged["SDG"].dropna().unique()):
 
     # Speichern
     safe_target = str(target).replace(".", "_")
-    out_path = aidvsindicatortotal+safe_target+".pdf"
+    out_path = aidvsindicatortotal+"{safe_target}.pdf"
     plt.savefig(out_path)
     plt.show()
