@@ -616,7 +616,7 @@ def countriesovertime():
   plt.savefig(countriesovertime_filepath, bbox_inches="tight")
   plt.show()
 
-def aidvsindicator():
+def aidvsindicators():
 
   # Stil
   plt.style.use("seaborn-v0_8-whitegrid")
@@ -671,7 +671,7 @@ def aidvsindicator():
 
       plt.show()
 
-def aidvsindicatortotal():
+def aidvsindicatorstotal():
 
   # Stil
   plt.style.use("seaborn-v0_8-whitegrid")
@@ -760,5 +760,5 @@ worldmaptotal()
 sdgdisbursements()
 purposenamesovertime()
 countriesovertime()
-aidvsindicator()
-aidvsindicatortotal()
+aidvsindicators()
+aidvsindicatorstotal()
