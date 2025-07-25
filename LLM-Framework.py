@@ -34,360 +34,370 @@ results2024_filepath = "data/2024 - Results.csv"
 aidvsindicator = f"data/Scatter_aid2023_vs_"
 aidvsindicatortotal = f"data/Scatter_aid2023_vs_total_score_2024_SDG_"
 
-# CSV laden
-df = pd.read_csv(input_filepath)
+def concatenate_and_translate():
 
-# Texte kombinieren
-df['FullText'] = df[['ProjectTitle', 'ShortDescription', 'LongDescription']].fillna('').agg(' '.join, axis=1)
+  # CSV laden
+  df = pd.read_csv(input_filepath)
 
-# Übersetzung ins Englische (via Google Translate API)
-translated = []
-translator = GoogleTranslator(source='auto', target='en')
+  # Texte kombinieren
+  df['FullText'] = df[['ProjectTitle', 'ShortDescription', 'LongDescription']].fillna('').agg(' '.join, axis=1)
 
-for text in tqdm(df['FullText'].tolist()):
-  try:
-    translated.append(translator.translate(text))
-  except Exception as e:
-    translated.append(text)  # falls Fehler, original belassen
+  # Übersetzung ins Englische (via Google Translate API)
+  translated = []
+  translator = GoogleTranslator(source='auto', target='en')
 
-df['TranslatedText'] = translated
+  for text in tqdm(df['FullText'].tolist()):
+    try:
+      translated.append(translator.translate(text))
+    except Exception as e:
+      translated.append(text)  # falls Fehler, original belassen
 
-# Speichern
-df.to_csv(translated_filepath, index=False)
+  df['TranslatedText'] = translated
 
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+  # Speichern
+  df.to_csv(translated_filepath, index=False)
 
-# CSV laden
-df = pd.read_csv(translated_filepath)
-df = df[df['TranslatedText'].notna()].reset_index(drop=True)
+def multi_prompt_mapping():
 
-# MULTI-PROMPT-Hypothesen für jedes SDG
-sdg_prompts = {
-    "Significantly reduce all forms of violence and related death rates everywhere (SDG 16.1)": [
-        "This project contributes to reducing violence.",
-        "This project prevents armed conflict or physical harm.",
-        "This project aims to reduce violent-related deaths."
-    ],
-    "End abuse, exploitation, trafficking and all forms of violence against and torture of children (SDG 16.2)": [
-        "This project protects children from abuse or exploitation.",
-        "This project fights human trafficking or sexual violence.",
-        "This project prevents neglect and mistreatment of children."
-    ],
-    "Promote the rule of law at the national and international levels and ensure equal access to justice for all (SDG 16.3)": [
-        "This project promotes the rule of law and justice.",
-        "This project improves access to fair legal systems.",
-        "This project strengthens judicial institutions."
-    ],
-    "By 2030, significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime (SDG 16.4)": [
-        "This project fights organized crime or money laundering.",
-        "This project addresses illicit arms trafficking.",
-        "This project prevents illegal financial flows."
-    ],
-    "Develop effective, accountable and transparent institutions at all levels (SDG 16.6)": [
-        "This project supports institutional reforms.",
-        "This project strengthens public administration and governance structures.",
-        "This project promotes transparency and accountability in governance."
-    ],
-    "Broaden and strengthen the participation of developing countries in the institutions of global governance (SDG 16.8)": [
-        "This project enhances the participation of developing countries in global governance.",
-        "This project builds capacity for engagement in international institutions.",
-        "This project supports inclusive representation in multilateral decision-making."
-    ],
-    "Eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation (SDG 5.2)": [
-        "This project helps eliminate violence against women and girls.",
-        "This project addresses gender-based violence.",
-        "This project supports female survivors of abuse."
-    ]
-}
+  classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-# Klassifikationsdurchlauf mit Mean Aggregation
-results_dict = {k: [] for k in sdg_prompts.keys()}
-top_sdgs = []
-top_scores = []
+  # CSV laden
+  df = pd.read_csv(translated_filepath)
+  df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
-for i, text in tqdm(enumerate(df["TranslatedText"]), total=len(df), desc="🔍 Classifying"):
-    sdg_scores = {}
-    for sdg, prompts in sdg_prompts.items():
-        scores = []
-        for hyp in prompts:
-            res = classifier(text, [hyp], multi_label=False)
-            scores.append(res["scores"][0])
-        sdg_scores[sdg] = np.mean(scores)  # <- mean aggregation
-        results_dict[sdg].append(sdg_scores[sdg])
+  # MULTI-PROMPT-Hypothesen für jedes SDG
+  sdg_prompts = {
+      "Significantly reduce all forms of violence and related death rates everywhere (SDG 16.1)": [
+          "This project contributes to reducing violence.",
+          "This project prevents armed conflict or physical harm.",
+          "This project aims to reduce violent-related deaths."
+        ],
+      "End abuse, exploitation, trafficking and all forms of violence against and torture of children (SDG 16.2)": [
+          "This project protects children from abuse or exploitation.",
+          "This project fights human trafficking or sexual violence.",
+          "This project prevents neglect and mistreatment of children."
+      ],
+      "Promote the rule of law at the national and international levels and ensure equal access to justice for all (SDG 16.3)": [
+          "This project promotes the rule of law and justice.",
+          "This project improves access to fair legal systems.",
+          "This project strengthens judicial institutions."
+      ],
+      "By 2030, significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime (SDG 16.4)": [
+          "This project fights organized crime or money laundering.",
+          "This project addresses illicit arms trafficking.",
+          "This project prevents illegal financial flows."
+      ],
+      "Develop effective, accountable and transparent institutions at all levels (SDG 16.6)": [
+          "This project supports institutional reforms.",
+          "This project strengthens public administration and governance structures.",
+          "This project promotes transparency and accountability in governance."
+      ],
+      "Broaden and strengthen the participation of developing countries in the institutions of global governance (SDG 16.8)": [
+          "This project enhances the participation of developing countries in global governance.",
+          "This project builds capacity for engagement in international institutions.",
+          "This project supports inclusive representation in multilateral decision-making."
+      ],
+      "Eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation (SDG 5.2)": [
+          "This project helps eliminate violence against women and girls.",
+          "This project addresses gender-based violence.",
+          "This project supports female survivors of abuse."
+      ]
+  }
 
-    # Top SDG
-    top_sdg = max(sdg_scores, key=sdg_scores.get)
-    top_sdgs.append(top_sdg)
-    top_scores.append(sdg_scores[top_sdg])
+  # Klassifikationsdurchlauf mit Mean Aggregation
+  results_dict = {k: [] for k in sdg_prompts.keys()}
+  top_sdgs = []
+  top_scores = []
 
-# DataFrame zusammenführen
-for k in results_dict:
-    df[k] = results_dict[k]
-df["Top_SDG"] = top_sdgs
-df["Top_Score"] = top_scores
+  for i, text in tqdm(enumerate(df["TranslatedText"]), total=len(df), desc="🔍 Classifying"):
+      sdg_scores = {}
+      for sdg, prompts in sdg_prompts.items():
+          scores = []
+          for hyp in prompts:
+              res = classifier(text, [hyp], multi_label=False)
+              scores.append(res["scores"][0])
+          sdg_scores[sdg] = np.mean(scores)  # <- mean aggregation
+          results_dict[sdg].append(sdg_scores[sdg])
 
-# Relevante SDGs (Score > 0.4)
-def assign_sdg(row):
-    return [sdg for sdg in sdg_prompts if row[sdg] > 0.4]
-df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
+      # Top SDG
+      top_sdg = max(sdg_scores, key=sdg_scores.get)
+      top_sdgs.append(top_sdg)
+      top_scores.append(sdg_scores[top_sdg])
 
-# Speichern
-df.to_csv(mapped_filepath, index=False)
+  # DataFrame zusammenführen
+  for k in results_dict:
+      df[k] = results_dict[k]
+  df["Top_SDG"] = top_sdgs
+  df["Top_Score"] = top_scores
 
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+  # Relevante SDGs (Score > 0.4)
+  def assign_sdg(row):
+      return [sdg for sdg in sdg_prompts if row[sdg] > 0.4]
+  df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
 
-# CSV laden
-df = pd.read_csv(translated_filepath)
-df = df[df['TranslatedText'].notna()].reset_index(drop=True)
+  # Speichern
+  df.to_csv(mapped_filepath, index=False)
 
-# SINGLE-PROMPT-Hypothesen für jedes SDG
-sdg_prompts = {
-    "Significantly reduce all forms of violence and related death rates everywhere (SDG 16.1)": [
-        "This project aims to significantly reduce all forms of violence and related death rates everywhere."
-    ],
-    "End abuse, exploitation, trafficking and all forms of violence against and torture of children (SDG 16.2)": [
-        "This project aims to end abuse, exploitation, trafficking and all forms of violence against and torture of children."
-    ],
-    "Promote the rule of law at the national and international levels and ensure equal access to justice for all (SDG 16.3)": [
-        "This project aims to promote the rule of law at the national and international levels and ensure equal access to justice for all."
-    ],
-    "By 2030, significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime (SDG 16.4)": [
-        "This project aims to significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime."
-    ],
-    "Eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation (SDG 5.2)": [
-        "This project aims to eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation."
-    ],
-    "Develop effective, accountable and transparent institutions at all levels (SDG 16.6)": [
-        "This project aims to develop effective, accountable and transparent institutions at all levels."
-    ],
-    "Broaden and strengthen the participation of developing countries in the institutions of global governance (SDG 16.8)": [
-        "This project aims to broaden and strengthen the participation of developing countries in the institutions of global governance."
-    ]
-}
+def single_prompt_mapping():
 
-# Klassifikationsdurchlauf mit Mean Aggregation
-results_dict = {k: [] for k in sdg_prompts.keys()}
-top_sdgs = []
-top_scores = []
+  classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-for i, text in tqdm(enumerate(df["TranslatedText"]), total=len(df), desc="🔍 Classifying"):
-    sdg_scores = {}
-    for sdg, prompts in sdg_prompts.items():
-        scores = []
-        for hyp in prompts:
-            res = classifier(text, [hyp], multi_label=False)
-            scores.append(res["scores"][0])
-        sdg_scores[sdg] = np.mean(scores)  # <- mean aggregation
-        results_dict[sdg].append(sdg_scores[sdg])
+  # CSV laden
+  df = pd.read_csv(translated_filepath)
+  df = df[df['TranslatedText'].notna()].reset_index(drop=True)
 
-    # Top SDG
-    top_sdg = max(sdg_scores, key=sdg_scores.get)
-    top_sdgs.append(top_sdg)
-    top_scores.append(sdg_scores[top_sdg])
+  # SINGLE-PROMPT-Hypothesen für jedes SDG
+  sdg_prompts = {
+      "Significantly reduce all forms of violence and related death rates everywhere (SDG 16.1)": [
+          "This project aims to significantly reduce all forms of violence and related death rates everywhere."
+      ],
+      "End abuse, exploitation, trafficking and all forms of violence against and torture of children (SDG 16.2)": [
+          "This project aims to end abuse, exploitation, trafficking and all forms of violence against and torture of children."
+      ],
+      "Promote the rule of law at the national and international levels and ensure equal access to justice for all (SDG 16.3)": [
+          "This project aims to promote the rule of law at the national and international levels and ensure equal access to justice for all."
+      ],
+      "By 2030, significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime (SDG 16.4)": [
+          "This project aims to significantly reduce illicit financial and arms flows, strengthen the recovery and return of stolen assets and combat all forms of organized crime."
+      ],
+      "Eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation (SDG 5.2)": [
+          "This project aims to eliminate all forms of violence against all women and girls in the public and private spheres, including trafficking and sexual and other types of exploitation."
+      ],
+      "Develop effective, accountable and transparent institutions at all levels (SDG 16.6)": [
+          "This project aims to develop effective, accountable and transparent institutions at all levels."
+      ],
+      "Broaden and strengthen the participation of developing countries in the institutions of global governance (SDG 16.8)": [
+          "This project aims to broaden and strengthen the participation of developing countries in the institutions of global governance."
+      ]
+  }
 
-# DataFrame zusammenführen
-for k in results_dict:
-    df[k] = results_dict[k]
-df["Top_SDG"] = top_sdgs
-df["Top_Score"] = top_scores
+  # Klassifikationsdurchlauf mit Mean Aggregation
+  results_dict = {k: [] for k in sdg_prompts.keys()}
+  top_sdgs = []
+  top_scores = []
 
-# Relevante SDGs (Score > 0.4)
-def assign_sdg(row):
-    return [sdg for sdg in sdg_prompts if row[sdg] > 0.4]
+  for i, text in tqdm(enumerate(df["TranslatedText"]), total=len(df), desc="🔍 Classifying"):
+      sdg_scores = {}
+      for sdg, prompts in sdg_prompts.items():
+          scores = []
+          for hyp in prompts:
+              res = classifier(text, [hyp], multi_label=False)
+              scores.append(res["scores"][0])
+          sdg_scores[sdg] = np.mean(scores)  # <- mean aggregation
+          results_dict[sdg].append(sdg_scores[sdg])
 
-df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
+      # Top SDG
+      top_sdg = max(sdg_scores, key=sdg_scores.get)
+      top_sdgs.append(top_sdg)
+      top_scores.append(sdg_scores[top_sdg])
 
-# Speichern
-df.to_csv(singlemapped_filepath, index=False)
+  # DataFrame zusammenführen
+  for k in results_dict:
+      df[k] = results_dict[k]
+  df["Top_SDG"] = top_sdgs
+  df["Top_Score"] = top_scores
 
-# Daten laden
-df = pd.read_csv(allmapped_filepath, low_memory=False)
+  # Relevante SDGs (Score > 0.4)
+  def assign_sdg(row):
+      return [sdg for sdg in sdg_prompts if row[sdg] > 0.4]
 
-# Empfängerländer bereinigen
-df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
-df["USD_Disbursement"] = (
-    df["USD_Disbursement"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
+  df["Assigned_SDGs"] = df.apply(assign_sdg, axis=1)
 
-# Regionale/unspezifische Empfänger ausschließen
-non_countries = [
-    "africa, regional", "america, regional", "asia, regional", "europe, regional",
-    "oceania, regional", "south america, regional", "south asia, regional",
-    "western africa, regional", "eastern africa, regional", "southern africa, regional",
-    "central asia, regional", "central america, regional", "middle east, regional",
-    "middle africa, regional", "caribbean, regional", "caribbean & central america, regional",
-    "far east asia, regional", "north of sahara, regional", "south of sahara, regional",
-    "south & central asia, regional", "melanesia, regional", "bilateral, unspecified",
-    "states ex-yugoslavia unspecified", "tokelau"
-]
-df = df[~df["RecipientName_clean"].isin(non_countries)].copy()
+  # Speichern
+  df.to_csv(singlemapped_filepath, index=False)
 
-# Mapping abweichender Ländernamen
-manual_map = {
-    "china (people's republic of)": "china",
-    "democratic people's republic of korea": "north korea",
-    "democratic republic of the congo": "democratic republic of the congo",
-    "cote d'ivoire": "ivory coast",
-    "lao people's democratic republic": "laos",
-    "syrian arab republic": "syria",
-    "viet nam": "vietnam",
-    "turkiye": "turkey",
-    "micronesia": "micronesia (federated states of)",
-    "west bank and gaza strip": "palestine",
-    "congo": "republic of the congo",
-    "north macedonia": "north macedonia",
-    "cabo verde": "cape verde",
-    "eswatini": "swaziland",
-    "timor-leste": "east timor",
-    "sao tome and principe": "são tomé and príncipe",
-    "trinidad and tobago": "trinidad and tobago",
-    "myanmar": "myanmar",
-    "kosovo": "kosovo",
-    "republic of moldova": "moldova",
-    "bahamas, the": "bahamas",
-    "gambia, the": "gambia",
-    "venezuela (bolivarian republic of)": "venezuela",
-    "iran (islamic republic of)": "iran",
-    "russian federation": "russia",
-    "bolivia (plurinational state of)": "bolivia",
-    "tanzania, united republic of": "tanzania",
-    "korea, republic of": "south korea",
-    "türkiye": "turkey",
-    "serbia": "republic of serbia"
-}
+def worldmapsdg():
 
-# Weltkarte laden
-world = gpd.read_file("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
-world["name"] = world["name"].str.strip().str.lower()
+  # Daten laden
+  df = pd.read_csv(allmapped_filepath, low_memory=False)
 
-# Karten pro SDG-Label erzeugen
-unique_sdg_labels = df["AssignedLabel"].dropna().unique()
+  # Empfängerländer bereinigen
+  df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
+  df["USD_Disbursement"] = (
+      df["USD_Disbursement"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
 
-for label in unique_sdg_labels:
-    df_label = df[df["AssignedLabel"] == label].copy()
-    usd_label_total = df_label["USD_Disbursement"].sum()
+  # Regionale/unspezifische Empfänger ausschließen
+  non_countries = [
+      "africa, regional", "america, regional", "asia, regional", "europe, regional",
+      "oceania, regional", "south america, regional", "south asia, regional",
+      "western africa, regional", "eastern africa, regional", "southern africa, regional",
+      "central asia, regional", "central america, regional", "middle east, regional",
+      "middle africa, regional", "caribbean, regional", "caribbean & central america, regional",
+      "far east asia, regional", "north of sahara, regional", "south of sahara, regional",
+      "south & central asia, regional", "melanesia, regional", "bilateral, unspecified",
+      "states ex-yugoslavia unspecified", "tokelau"
+  ]
+  df = df[~df["RecipientName_clean"].isin(non_countries)].copy()
 
-    # Mapping anwenden und gruppieren
-    df_label["MatchName"] = df_label["RecipientName_clean"].replace(manual_map)
-    label_data = df_label.groupby("MatchName", as_index=False)["USD_Disbursement"].sum()
+  # Mapping abweichender Ländernamen
+  manual_map = {
+      "china (people's republic of)": "china",
+      "democratic people's republic of korea": "north korea",
+      "democratic republic of the congo": "democratic republic of the congo",
+      "cote d'ivoire": "ivory coast",
+      "lao people's democratic republic": "laos",
+      "syrian arab republic": "syria",
+      "viet nam": "vietnam",
+      "turkiye": "turkey",
+      "micronesia": "micronesia (federated states of)",
+      "west bank and gaza strip": "palestine",
+      "congo": "republic of the congo",
+      "north macedonia": "north macedonia",
+      "cabo verde": "cape verde",
+      "eswatini": "swaziland",
+      "timor-leste": "east timor",
+      "sao tome and principe": "são tomé and príncipe",
+      "trinidad and tobago": "trinidad and tobago",
+      "myanmar": "myanmar",
+      "kosovo": "kosovo",
+      "republic of moldova": "moldova",
+      "bahamas, the": "bahamas",
+      "gambia, the": "gambia",
+      "venezuela (bolivarian republic of)": "venezuela",
+      "iran (islamic republic of)": "iran",
+      "russian federation": "russia",
+      "bolivia (plurinational state of)": "bolivia",
+      "tanzania, united republic of": "tanzania",
+      "korea, republic of": "south korea",
+      "türkiye": "turkey",
+      "serbia": "republic of serbia"
+  }
 
-    # Merge mit Weltkarte
-    merged = world.merge(label_data, how="left", left_on="name", right_on="MatchName")
+  # Weltkarte laden
+  world = gpd.read_file("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
+  world["name"] = world["name"].str.strip().str.lower()
 
-    # Plot
-    fig, ax = plt.subplots(figsize=(28, 14))
-    norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
+  # Karten pro SDG-Label erzeugen
+  unique_sdg_labels = df["AssignedLabel"].dropna().unique()
 
-    merged.plot(
-        column="USD_Disbursement",
-        cmap="Reds",
-        linewidth=0.5,
-        edgecolor="white",
-        ax=ax,
-        legend=True,
-        norm=norm,
-        missing_kwds={
-            "color": "white",        # Länder ohne Funding
-            "edgecolor": "lightgray" # Dezente Umrandung
-        },
-        legend_kwds={
-            "shrink": 0.6,
-            "orientation": "vertical"
-        }
-    )
+  for label in unique_sdg_labels:
+      df_label = df[df["AssignedLabel"] == label].copy()
+      usd_label_total = df_label["USD_Disbursement"].sum()
 
-    # Schriftgröße nachträglich setzen
-    colorbar = ax.get_figure().get_axes()[-1]
-    colorbar.tick_params(labelsize=30)
-    colorbar.set_ylabel("Disbursements (in USD millions)", fontsize=30)
+      # Mapping anwenden und gruppieren
+      df_label["MatchName"] = df_label["RecipientName_clean"].replace(manual_map)
+      label_data = df_label.groupby("MatchName", as_index=False)["USD_Disbursement"].sum()
 
-    # Karte begrenzen (Arktis abschneiden)
-    ax.set_ylim(-60, 85)
-    ax.set_xlim(-150, 150)
-    ax.axis("off")
+      # Merge mit Weltkarte
+      merged = world.merge(label_data, how="left", left_on="name", right_on="MatchName")
 
-    # Speichern
-    plt.tight_layout()
-    output_path = output_filepath+str(label)+".pdf" 
-    plt.savefig(output_path, bbox_inches="tight")
-    plt.close()
+      # Plot
+      fig, ax = plt.subplots(figsize=(28, 14))
+      norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
 
-# Daten laden
-df = pd.read_csv(allmapped_filepath, low_memory=False)
+      merged.plot(
+          column="USD_Disbursement",
+          cmap="Reds",
+          linewidth=0.5,
+          edgecolor="white",
+          ax=ax,
+          legend=True,
+          norm=norm,
+          missing_kwds={
+              "color": "white",        # Länder ohne Funding
+              "edgecolor": "lightgray" # Dezente Umrandung
+          },
+          legend_kwds={
+              "shrink": 0.6,
+              "orientation": "vertical"
+          }
+      )
 
-# Empfängerländer bereinigen
-df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
-df["USD_Disbursement"] = (
-    df["USD_Disbursement"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
+      # Schriftgröße nachträglich setzen
+      colorbar = ax.get_figure().get_axes()[-1]
+      colorbar.tick_params(labelsize=30)
+      colorbar.set_ylabel("Disbursements (in USD millions)", fontsize=30)
 
-# Regionale/unspezifische Empfänger ausschließen
-non_countries = [
-    "africa, regional", "america, regional", "asia, regional", "europe, regional",
-    "oceania, regional", "south america, regional", "south asia, regional",
-    "western africa, regional", "eastern africa, regional", "southern africa, regional",
-    "central asia, regional", "central america, regional", "middle east, regional",
-    "middle africa, regional", "caribbean, regional", "caribbean & central america, regional",
-    "far east asia, regional", "north of sahara, regional", "south of sahara, regional",
-    "south & central asia, regional", "melanesia, regional", "bilateral, unspecified",
-    "states ex-yugoslavia unspecified", "tokelau"
-]
-df = df[~df["RecipientName_clean"].isin(non_countries)].copy()
+      # Karte begrenzen (Arktis abschneiden)
+      ax.set_ylim(-60, 85)
+      ax.set_xlim(-150, 150)
+      ax.axis("off")
 
-# Mapping abweichender Ländernamen
-manual_map = {
-    "china (people's republic of)": "china",
-    "democratic people's republic of korea": "north korea",
-    "democratic republic of the congo": "democratic republic of the congo",
-    "cote d'ivoire": "ivory coast",
-    "lao people's democratic republic": "laos",
-    "syrian arab republic": "syria",
-    "viet nam": "vietnam",
-    "turkiye": "turkey",
-    "micronesia": "micronesia (federated states of)",
-    "west bank and gaza strip": "palestine",
-    "congo": "republic of the congo",
-    "north macedonia": "north macedonia",
-    "cabo verde": "cape verde",
-    "eswatini": "swaziland",
-    "timor-leste": "east timor",
-    "sao tome and principe": "são tomé and príncipe",
-    "trinidad and tobago": "trinidad and tobago",
-    "myanmar": "myanmar",
-    "kosovo": "kosovo",
-    "republic of moldova": "moldova",
-    "bahamas, the": "bahamas",
-    "gambia, the": "gambia",
-    "venezuela (bolivarian republic of)": "venezuela",
-    "iran (islamic republic of)": "iran",
-    "russian federation": "russia",
-    "bolivia (plurinational state of)": "bolivia",
-    "tanzania, united republic of": "tanzania",
-    "korea, republic of": "south korea",
-    "türkiye": "turkey",
-    "serbia": "republic of serbia"
-}
+      # Speichern
+      plt.tight_layout()
+      output_path = output_filepath+str(label)+".pdf" 
+      plt.savefig(output_path, bbox_inches="tight")
+      plt.close()
 
-# Weltkarte laden
-world = gpd.read_file("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
-world["name"] = world["name"].str.strip().str.lower()
+def worldmaptotal():
 
-# Mapping anwenden & aggregieren
-df["MatchName"] = df["RecipientName_clean"].replace(manual_map)
-total_data = df.groupby("MatchName", as_index=False)["USD_Disbursement"].sum()
+    # Daten laden
+    df = pd.read_csv(allmapped_filepath, low_memory=False)
 
-# Merge mit Weltkarte
-merged = world.merge(total_data, how="left", left_on="name", right_on="MatchName")
+  # Empfängerländer bereinigen
+  df["RecipientName_clean"] = df["RecipientName"].apply(lambda x: unidecode(str(x).strip().lower()))
+  df["USD_Disbursement"] = (
+      df["USD_Disbursement"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
 
-# Plot
-fig, ax = plt.subplots(figsize=(28, 14))
-norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
+  # Regionale/unspezifische Empfänger ausschließen
+  non_countries = [
+      "africa, regional", "america, regional", "asia, regional", "europe, regional",
+      "oceania, regional", "south america, regional", "south asia, regional",
+      "western africa, regional", "eastern africa, regional", "southern africa, regional",
+      "central asia, regional", "central america, regional", "middle east, regional",
+      "middle africa, regional", "caribbean, regional", "caribbean & central america, regional",
+      "far east asia, regional", "north of sahara, regional", "south of sahara, regional",
+      "south & central asia, regional", "melanesia, regional", "bilateral, unspecified",
+      "states ex-yugoslavia unspecified", "tokelau"
+  ]
+  df = df[~df["RecipientName_clean"].isin(non_countries)].copy()
+
+  # Mapping abweichender Ländernamen
+  manual_map = {
+      "china (people's republic of)": "china",
+      "democratic people's republic of korea": "north korea",
+      "democratic republic of the congo": "democratic republic of the congo",
+      "cote d'ivoire": "ivory coast",
+      "lao people's democratic republic": "laos",
+      "syrian arab republic": "syria",
+      "viet nam": "vietnam",
+      "turkiye": "turkey",
+      "micronesia": "micronesia (federated states of)",
+      "west bank and gaza strip": "palestine",
+      "congo": "republic of the congo",
+      "north macedonia": "north macedonia",
+      "cabo verde": "cape verde",
+      "eswatini": "swaziland",
+      "timor-leste": "east timor",
+      "sao tome and principe": "são tomé and príncipe",
+      "trinidad and tobago": "trinidad and tobago",
+      "myanmar": "myanmar",
+      "kosovo": "kosovo",
+      "republic of moldova": "moldova",
+      "bahamas, the": "bahamas",
+      "gambia, the": "gambia",
+      "venezuela (bolivarian republic of)": "venezuela",
+      "iran (islamic republic of)": "iran",
+      "russian federation": "russia",
+      "bolivia (plurinational state of)": "bolivia",
+      "tanzania, united republic of": "tanzania",
+      "korea, republic of": "south korea",
+      "türkiye": "turkey",
+      "serbia": "republic of serbia"
+  }
+
+  # Weltkarte laden
+  world = gpd.read_file("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
+  world["name"] = world["name"].str.strip().str.lower()
+
+  # Mapping anwenden & aggregieren
+  df["MatchName"] = df["RecipientName_clean"].replace(manual_map)
+  total_data = df.groupby("MatchName", as_index=False)["USD_Disbursement"].sum()
+
+  # Merge mit Weltkarte
+  merged = world.merge(total_data, how="left", left_on="name", right_on="MatchName")
+
+  # Plot
+  fig, ax = plt.subplots(figsize=(28, 14))
+  norm = Normalize(vmin=0, vmax=merged["USD_Disbursement"].max())
 
 merged.plot(
     column="USD_Disbursement",
@@ -405,327 +415,349 @@ merged.plot(
         "shrink": 0.6,
         "orientation": "horizontal"
     }
-)
+  )
 
-# Schriftgröße nachträglich setzen
-colorbar = ax.get_figure().get_axes()[-1]
-colorbar.tick_params(labelsize=30)
-colorbar.set_xlabel("Disbursements (in USD millions)", fontsize=30)
+  # Schriftgröße nachträglich setzen
+  colorbar = ax.get_figure().get_axes()[-1]
+  colorbar.tick_params(labelsize=30)
+  colorbar.set_xlabel("Disbursements (in USD millions)", fontsize=30)
 
-# Karte begrenzen (Arktis & überflüssige Ränder entfernen)
-ax.set_ylim(-60, 85)
-ax.set_xlim(-150, 150)
-ax.axis("off")
+  # Karte begrenzen (Arktis & überflüssige Ränder entfernen)
+  ax.set_ylim(-60, 85)
+  ax.set_xlim(-150, 150)
+  ax.axis("off")
 
-# Speichern
-plt.tight_layout()
-plt.savefig(worldmap_filepath, bbox_inches="tight")
-plt.close()
+  # Speichern
+  plt.tight_layout()
+  plt.savefig(worldmap_filepath, bbox_inches="tight")
+  plt.close()
 
-# Daten laden
-df = pd.read_csv(allmapped_filepath, low_memory=False)
-df["USD_Disbursement"] = (
-    df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
-)
-df = df[df["AssignedLabel"].notna()].copy()
-df["AssignedLabel"] = df["AssignedLabel"].astype(str)
+def sdgdisbursements():
 
-# Aggregation
-bar_data = df.groupby("AssignedLabel")["USD_Disbursement"].sum()
-sdg_order = ["16.1", "16.3", "16.8", "16.6", "16.2", "5.2", "16.4"]
-bar_data = bar_data.reindex(sdg_order)
+  # Daten laden
+  df = pd.read_csv(allmapped_filepath, low_memory=False)
+  df["USD_Disbursement"] = (
+      df["USD_Disbursement"].astype(str).str.replace(",", "").astype(float)
+  )
+  df = df[df["AssignedLabel"].notna()].copy()
+  df["AssignedLabel"] = df["AssignedLabel"].astype(str)
 
-# Farben: farbenblindensichere, kräftige Tol-Palette
-color_palette = [
-    "#332288",  # dunkelblau
-    "#117733",  # grün
-    "#88CCEE",  # hellblau
-    "#DDCC77",  # sandgelb
-    "#555555",  # dunkelgrau
-    "#AA4499",  # violett
-    "#44AA99",  # türkisgrün
-]
+  # Aggregation
+  bar_data = df.groupby("AssignedLabel")["USD_Disbursement"].sum()
+  sdg_order = ["16.1", "16.3", "16.8", "16.6", "16.2", "5.2", "16.4"]
+  bar_data = bar_data.reindex(sdg_order)
 
-# Plot
-fig, ax = plt.subplots(figsize=(12, 6))
-bars = ax.bar([f"SDG {k}" for k in bar_data.index], bar_data.values, color=color_palette)
+  # Farben: farbenblindensichere, kräftige Tol-Palette
+  color_palette = [
+      "#332288",  # dunkelblau
+      "#117733",  # grün
+      "#88CCEE",  # hellblau
+      "#DDCC77",  # sandgelb
+      "#555555",  # dunkelgrau
+      "#AA4499",  # violett
+      "#44AA99",  # türkisgrün
+  ]
 
-# Achsen und Layout
-ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
-ax.tick_params(axis='x', labelsize=14)
-ax.tick_params(axis='y', labelsize=14)
-ax.spines[['top', 'right']].set_visible(False)
-ax.grid(axis='y', linestyle='--', alpha=0.5)
-ax.set_axisbelow(True)
+  # Plot
+  fig, ax = plt.subplots(figsize=(12, 6))
+  bars = ax.bar([f"SDG {k}" for k in bar_data.index], bar_data.values, color=color_palette)
 
-# Export
-plt.tight_layout()
-plt.savefig(sdgdisbursements_filepath)
-plt.show()
+  # Achsen und Layout
+  ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
+  ax.tick_params(axis='x', labelsize=14)
+  ax.tick_params(axis='y', labelsize=14)
+  ax.spines[['top', 'right']].set_visible(False)
+  ax.grid(axis='y', linestyle='--', alpha=0.5)
+  ax.set_axisbelow(True)
 
-# Stil & Farben
-plt.style.use("seaborn-v0_8-whitegrid")
-sns.set_palette("colorblind")
+  # Export
+  plt.tight_layout()
+  plt.savefig(sdgdisbursements_filepath)
+  plt.show()
 
-# CSV laden
-csv_path = yearscountries_filepath
-df = pd.read_csv(csv_path)
-df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+def purposenamesovertime():
 
-# Beträge bereinigen
-df["usd_disbursement_in_millions"] = (
-    df["usd_disbursement_in_millions"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
+  # Stil & Farben
+  plt.style.use("seaborn-v0_8-whitegrid")
+  sns.set_palette("colorblind")
 
-# Mikro-Cluster entfernen
-df = df[df["purpose_name"] != "Conflict, Peace & Security"]
+  # CSV laden
+  csv_path = yearscountries_filepath
+  df = pd.read_csv(csv_path)
+  df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-# Gruppieren
-df_grouped = (
-    df.groupby(["year", "purpose_name"], as_index=False)["usd_disbursement_in_millions"]
-    .sum()
-)
+  # Beträge bereinigen
+  df["usd_disbursement_in_millions"] = (
+      df["usd_disbursement_in_millions"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
 
-# Plot-Vorbereitung
-fig, ax = plt.subplots(figsize=(14, 8))
-years_full = list(range(df_grouped["year"].min(), df_grouped["year"].max() + 1))
-purpose_order = df_grouped.groupby("purpose_name")["year"].min().sort_values().index
-colors = sns.color_palette("colorblind", n_colors=len(purpose_order))
+  # Mikro-Cluster entfernen
+  df = df[df["purpose_name"] != "Conflict, Peace & Security"]
 
-# Linien zeichnen
-for i, purpose in enumerate(purpose_order):
-    sub = df_grouped[df_grouped["purpose_name"] == purpose].set_index("year")
-    sub = sub.reindex(years_full, fill_value=0).reset_index()
-    ax.plot(
-        sub["year"],
-        sub["usd_disbursement_in_millions"],
-        label=purpose,
-        linewidth=2.2,
-        color=colors[i]
-    )
+  # Gruppieren
+  df_grouped = (
+      df.groupby(["year", "purpose_name"], as_index=False)["usd_disbursement_in_millions"]
+      .sum()
+  )
 
-# Achsenbeschriftung
-ax.set_xlabel("Year", fontsize=18)
-ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
-ax.tick_params(axis='both', labelsize=16)
+  # Plot-Vorbereitung
+  fig, ax = plt.subplots(figsize=(14, 8))
+  years_full = list(range(df_grouped["year"].min(), df_grouped["year"].max() + 1))
+  purpose_order = df_grouped.groupby("purpose_name")["year"].min().sort_values().index
+  colors = sns.color_palette("colorblind", n_colors=len(purpose_order))
 
-# Legende
-legend = ax.legend(
-    title="Purpose",
-    title_fontsize=18,
-    fontsize=16,
-    loc="upper left",
-    frameon=True,
-    framealpha=0.95,
-    facecolor="white",
-    edgecolor="gray"
-)
+  # Linien zeichnen
+  for i, purpose in enumerate(purpose_order):
+      sub = df_grouped[df_grouped["purpose_name"] == purpose].set_index("year")
+      sub = sub.reindex(years_full, fill_value=0).reset_index()
+      ax.plot(
+          sub["year"],
+          sub["usd_disbursement_in_millions"],
+          label=purpose,
+          linewidth=2.2,
+          color=colors[i]
+      )
 
-# Export
-plt.tight_layout()
-plt.savefig(purposenamesovertime_filepath, bbox_inches="tight")
-plt.show()
+  # Achsenbeschriftung
+  ax.set_xlabel("Year", fontsize=18)
+  ax.set_ylabel("Disbursements (in USD millions)", fontsize=18)
+  ax.tick_params(axis='both', labelsize=16)
 
-# Stil
-plt.style.use("seaborn-v0_8-whitegrid")
-sns.set_palette("colorblind")
+  # Legende
+  legend = ax.legend(
+      title="Purpose",
+      title_fontsize=18,
+      fontsize=16,
+      loc="upper left",
+      frameon=True,
+      framealpha=0.95,
+      facecolor="white",
+      edgecolor="gray"
+  )
 
-# Daten einlesen
-csv_path = yearscountries_filepath
-df = pd.read_csv(csv_path)
+  # Export
+  plt.tight_layout()
+  plt.savefig(purposenamesovertime_filepath, bbox_inches="tight")
+  plt.show()
 
-# Spaltennamen vereinheitlichen
-df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+def countriesovertime():
 
-# Beträge bereinigen
-df["usd_disbursement_in_millions"] = (
-    df["usd_disbursement_in_millions"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
+  # Stil
+  plt.style.use("seaborn-v0_8-whitegrid")
+  sns.set_palette("colorblind")
 
-# Auswahl der Länder
-countries = [
-    "Afghanistan", "Iraq", "Colombia", "Ukraine", "Democratic Republic of the Congo", "Syrian Arab Republic", "Sudan", "Somalia"
-]
+  # Daten einlesen
+  csv_path = yearscountries_filepath
+  df = pd.read_csv(csv_path)
 
-df_filtered = df[df["recipient_name_(en)"].isin(countries)]
+  # Spaltennamen vereinheitlichen
+  df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-# Gruppieren
-df_grouped = (
-    df_filtered.groupby(["year", "recipient_name_(en)"], as_index=False)
-    ["usd_disbursement_in_millions"].sum()
-)
+  # Beträge bereinigen
+  df["usd_disbursement_in_millions"] = (
+      df["usd_disbursement_in_millions"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
 
-# Vorbereitung für Plot
-fig, ax = plt.subplots(figsize=(14, 8))
-years_full = list(range(1992, df_grouped["year"].max() + 1))
-country_order = df_grouped.groupby("recipient_name_(en)")["usd_disbursement_in_millions"].sum().sort_values(ascending=False).index
-colors = sns.color_palette("colorblind", n_colors=len(country_order))
+  # Auswahl der Länder
+  countries = [
+      "Afghanistan", "Iraq", "Colombia", "Ukraine", "Democratic Republic of the Congo", "Syrian Arab Republic", "Sudan", "Somalia"
+  ]
 
-# Plotten
-for i, country in enumerate(country_order):
-    sub = df_grouped[df_grouped["recipient_name_(en)"] == country].set_index("year")
-    sub = sub.reindex(years_full, fill_value=0).reset_index()
-    ax.plot(
-        sub["year"],
-        sub["usd_disbursement_in_millions"],
-        label=country,
-        linewidth=2.2,
-        color=colors[i]
-    )
+  df_filtered = df[df["recipient_name_(en)"].isin(countries)]
 
-# Achsenbeschriftung
-ax.set_xlabel("Year", fontsize=18)
-ax.set_ylabel("USD Disbursements in Millions", fontsize=18)
-ax.tick_params(axis='both', labelsize=16)
+  # Gruppieren
+  df_grouped = (
+      df_filtered.groupby(["year", "recipient_name_(en)"], as_index=False)
+      ["usd_disbursement_in_millions"].sum()
+  )
 
-# Legende oben links
-ax.legend(
-    title="Country",
-    title_fontsize=18,
-    fontsize=16,
-    loc="upper left",
-    frameon=True,
-    facecolor="white",
-    edgecolor="gray"
-)
+  # Vorbereitung für Plot
+  fig, ax = plt.subplots(figsize=(14, 8))
+  years_full = list(range(1992, df_grouped["year"].max() + 1))
+  country_order = df_grouped.groupby("recipient_name_(en)")["usd_disbursement_in_millions"].sum().sort_values(ascending=False).index
+  colors = sns.color_palette("colorblind", n_colors=len(country_order))
 
-# Export
-plt.tight_layout()
-plt.savefig(countriesovertime_filepath, bbox_inches="tight")
-plt.show()
+  # Plotten
+  for i, country in enumerate(country_order):
+      sub = df_grouped[df_grouped["recipient_name_(en)"] == country].set_index("year")
+      sub = sub.reindex(years_full, fill_value=0).reset_index()
+      ax.plot(
+          sub["year"],
+          sub["usd_disbursement_in_millions"],
+          label=country,
+          linewidth=2.2,
+          color=colors[i]
+      )
 
-# Stil
-plt.style.use("seaborn-v0_8-whitegrid")
-sns.set_palette("colorblind")
+  # Achsenbeschriftung
+  ax.set_xlabel("Year", fontsize=18)
+  ax.set_ylabel("USD Disbursements in Millions", fontsize=18)
+  ax.tick_params(axis='both', labelsize=16)
 
-# Aid-Daten laden und aggregieren
-df_aid = pd.read_csv(allmapped2023_filepath)
-df_aid["USD_Disbursement"] = (
-    df_aid["USD_Disbursement"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
-df_aid_grouped = (
-    df_aid.groupby("RecipientName", as_index=False)["USD_Disbursement"]
-    .sum()
-    .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023"})
-)
+  # Legende oben links
+  ax.legend(
+      title="Country",
+      title_fontsize=18,
+      fontsize=16,
+      loc="upper left",
+      frameon=True,
+      facecolor="white",
+      edgecolor="gray"
+  )
 
-# Konfliktdaten laden
-df_conflict = pd.read_csv(results2024_filepath)
-conflict_cols = ["Country", "Total Score", "Deadliness Value", "Diffusion Value",
-                 "Danger Value", "Fragmentation Value"]
-df_conflict = df_conflict[conflict_cols].copy()
-df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
+  # Export
+  plt.tight_layout()
+  plt.savefig(countriesovertime_filepath, bbox_inches="tight")
+  plt.show()
 
-# Mergen
-df_merged = pd.merge(df_aid_grouped, df_conflict, on="Country", how="inner")
+def aidvsindicator():
 
-# Scatterplots generieren
-indicators = ["Total_Score", "Deadliness_Value", "Diffusion_Value", "Danger_Value", "Fragmentation_Value"]
+  # Stil
+  plt.style.use("seaborn-v0_8-whitegrid")
+  sns.set_palette("colorblind")
 
-for indicator in indicators:
-    plt.figure(figsize=(6, 4))
+  # Aid-Daten laden und aggregieren
+  df_aid = pd.read_csv(allmapped2023_filepath)
+  df_aid["USD_Disbursement"] = (
+      df_aid["USD_Disbursement"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
+  df_aid_grouped = (
+      df_aid.groupby("RecipientName", as_index=False)["USD_Disbursement"]
+      .sum()
+      .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023"})
+  )
 
-    # Plot mit Regressionslinie
-    sns.regplot(data=df_merged, x="Aid_2023", y=indicator, scatter_kws={"alpha": 0.4}, line_kws={"color": "red"})
+  # Konfliktdaten laden
+  df_conflict = pd.read_csv(results2024_filepath)
+  conflict_cols = ["Country", "Total Score", "Deadliness Value", "Diffusion Value",
+                   "Danger Value", "Fragmentation Value"]
+  df_conflict = df_conflict[conflict_cols].copy()
+  df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
 
-    # Korrelation berechnen
-    corr_value = df_merged["Aid_2023"].corr(df_merged[indicator])
-    plt.text(0.05, 0.95, f"Correlation: {corr_value:.2f}", transform=plt.gca().transAxes,
-             fontsize=12, verticalalignment="top", weight="bold")
+  # Mergen
+  df_merged = pd.merge(df_aid_grouped, df_conflict, on="Country", how="inner")
 
-    plt.xlabel("Disbursements (in USD millions) 2023")
-    plt.ylabel(indicator.replace("_", " ").capitalize() + " 2024")
-    plt.tight_layout()
+  # Scatterplots generieren
+  indicators = ["Total_Score", "Deadliness_Value", "Diffusion_Value", "Danger_Value", "Fragmentation_Value"]
 
-    # Speichern
-    filename = aidvsindicator+indicator.lower()+"_2024.pdf"
-    plt.savefig(filename)
+  for indicator in indicators:
+      plt.figure(figsize=(6, 4))
 
-    plt.show()
+      # Plot mit Regressionslinie
+      sns.regplot(data=df_merged, x="Aid_2023", y=indicator, scatter_kws={"alpha": 0.4}, line_kws={"color": "red"})
 
-# Stil
-plt.style.use("seaborn-v0_8-whitegrid")
-sns.set_palette("colorblind")
+      # Korrelation berechnen
+      corr_value = df_merged["Aid_2023"].corr(df_merged[indicator])
+      plt.text(0.05, 0.95, f"Correlation: {corr_value:.2f}", transform=plt.gca().transAxes,
+               fontsize=12, verticalalignment="top", weight="bold")
 
-# Aid-Daten laden
-df_aid = pd.read_csv(allmapped2023_filepath)
-df_aid["USD_Disbursement"] = (
-    df_aid["USD_Disbursement"]
-    .astype(str)
-    .str.replace(",", "")
-    .astype(float)
-)
+      plt.xlabel("Disbursements (in USD millions) 2023")
+      plt.ylabel(indicator.replace("_", " ").capitalize() + " 2024")
+      plt.tight_layout()
 
-# Gruppieren nach Land und SDG
-df_sdg_grouped = (
-    df_aid.groupby(["RecipientName", "AssignedLabel"], as_index=False)["USD_Disbursement"]
-    .sum()
-    .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023", "AssignedLabel": "SDG"})
-)
+      # Speichern
+      filename = aidvsindicator+indicator.lower()+"_2024.pdf"
+      plt.savefig(filename)
 
-# Konfliktdaten laden
-df_conflict = pd.read_csv(results2024_filepath)
-df_conflict = df_conflict[["Country", "Total Score"]].copy()
-df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
+      plt.show()
 
-# Mergen
-df_merged = pd.merge(df_sdg_grouped, df_conflict, on="Country", how="inner")
+def aidvsindicatortotal():
 
-# Scatterplots pro SDG
-for target in sorted(df_merged["SDG"].dropna().unique()):
-    sub = df_merged[df_merged["SDG"] == target].copy()
+  # Stil
+  plt.style.use("seaborn-v0_8-whitegrid")
+  sns.set_palette("colorblind")
 
-    # Nur weiter, wenn ausreichend Daten vorhanden
-    if len(sub) < 5 or sub["Aid_2023"].sum() == 0:
-        continue
+  # Aid-Daten laden
+  df_aid = pd.read_csv(allmapped2023_filepath)
+  df_aid["USD_Disbursement"] = (
+      df_aid["USD_Disbursement"]
+      .astype(str)
+      .str.replace(",", "")
+      .astype(float)
+  )
 
-    # Regression vorbereiten
-    X = sub["Aid_2023"]
-    y = sub["Total_Score"]
-    X_const = sm.add_constant(X)
-    model = sm.OLS(y, X_const).fit()
-    pred_summary = model.get_prediction(X_const).summary_frame(alpha=0.05)
+  # Gruppieren nach Land und SDG
+  df_sdg_grouped = (
+      df_aid.groupby(["RecipientName", "AssignedLabel"], as_index=False)["USD_Disbursement"]
+      .sum()
+      .rename(columns={"RecipientName": "Country", "USD_Disbursement": "Aid_2023", "AssignedLabel": "SDG"})
+  )
 
-    # Plot erstellen
-    plt.figure(figsize=(6, 4))
-    plt.scatter(X, y, alpha=0.6)
+  # Konfliktdaten laden
+  df_conflict = pd.read_csv(results2024_filepath)
+  df_conflict = df_conflict[["Country", "Total Score"]].copy()
+  df_conflict = df_conflict.rename(columns=lambda x: x.replace(" ", "_"))
 
-    # Regressionslinie und Konfidenzband sortiert plotten
-    sort_idx = X.argsort()
-    x_sorted = X.iloc[sort_idx]
-    mean = pred_summary["mean"].iloc[sort_idx]
-    ci_low = pred_summary["mean_ci_lower"].iloc[sort_idx]
-    ci_up = pred_summary["mean_ci_upper"].iloc[sort_idx]
+  # Mergen
+  df_merged = pd.merge(df_sdg_grouped, df_conflict, on="Country", how="inner")
 
-    plt.plot(x_sorted, mean, color="red")
-    plt.fill_between(x_sorted, ci_low, ci_up, color="red", alpha=0.2)
+  # Scatterplots pro SDG
+  for target in sorted(df_merged["SDG"].dropna().unique()):
+      sub = df_merged[df_merged["SDG"] == target].copy()
 
-    # Statistische Annotationen
-    corr, p = pearsonr(X, y)
-    r2 = model.rsquared_adj
-    plt.text(
-        0.05, 0.95,
-        f"Correlation: {corr:.2f}\n$p$-value: {p:.3f}\nAdj. $R^2$: {r2:.2f}",
-        transform=plt.gca().transAxes,
-        fontsize=11, verticalalignment="top", weight="bold"
-    )
+      # Nur weiter, wenn ausreichend Daten vorhanden
+      if len(sub) < 5 or sub["Aid_2023"].sum() == 0:
+          continue
 
-    # Achsentitel und Layout
-    plt.xlabel("Disbursements (in USD millions) 2023")
-    plt.ylabel("Total conflict score 2024")
-    plt.tight_layout()
+      # Regression vorbereiten
+      X = sub["Aid_2023"]
+      y = sub["Total_Score"]
+      X_const = sm.add_constant(X)
+      model = sm.OLS(y, X_const).fit()
+      pred_summary = model.get_prediction(X_const).summary_frame(alpha=0.05)
 
-    # Speichern
-    safe_target = str(target).replace(".", "_")
-    out_path = aidvsindicatortotal+safe_target+".pdf"
-    plt.savefig(out_path)
-    plt.show()
+      # Plot erstellen
+      plt.figure(figsize=(6, 4))
+      plt.scatter(X, y, alpha=0.6)
+
+      # Regressionslinie und Konfidenzband sortiert plotten
+      sort_idx = X.argsort()
+      x_sorted = X.iloc[sort_idx]
+      mean = pred_summary["mean"].iloc[sort_idx]
+      ci_low = pred_summary["mean_ci_lower"].iloc[sort_idx]
+      ci_up = pred_summary["mean_ci_upper"].iloc[sort_idx]
+
+      plt.plot(x_sorted, mean, color="red")
+      plt.fill_between(x_sorted, ci_low, ci_up, color="red", alpha=0.2)
+
+      # Statistische Annotationen
+      corr, p = pearsonr(X, y)
+      r2 = model.rsquared_adj
+        plt.text(
+          0.05, 0.95,
+          f"Correlation: {corr:.2f}\n$p$-value: {p:.3f}\nAdj. $R^2$: {r2:.2f}",
+          transform=plt.gca().transAxes,
+          fontsize=11, verticalalignment="top", weight="bold"
+      )
+
+      # Achsentitel und Layout
+      plt.xlabel("Disbursements (in USD millions) 2023")
+      plt.ylabel("Total conflict score 2024")
+      plt.tight_layout()
+
+      # Speichern
+      safe_target = str(target).replace(".", "_")
+      out_path = aidvsindicatortotal+safe_target+".pdf"
+      plt.savefig(out_path)
+      plt.show()
+
+#Execution
+concatenate_and_translate()
+multi_prompt_mapping()
+single_prompt_mapping()
+worldmapsdg()
+worldmaptotal()
+sdgdisbursements()
+purposenamesovertime()
+countriesovertime()
+aidvsindicator()
+aidvsindicatortotal()
