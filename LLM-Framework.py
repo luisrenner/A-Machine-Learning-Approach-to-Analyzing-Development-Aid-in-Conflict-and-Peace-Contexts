@@ -629,7 +629,7 @@ def aidvsindicators():
   sns.set_palette("colorblind")
 
   # Aid-Daten laden und aggregieren
-  df = read_input_lowmemory(allmapped2023_filepath)
+  df_aid = read_input_lowmemory(allmapped2023_filepath)
   df_aid["USD_Disbursement"] = (
       df_aid["USD_Disbursement"]
       .astype(str)
